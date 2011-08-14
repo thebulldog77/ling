@@ -1,2 +1,2 @@
-** Add a way to monitor 'how' a node would be loaded and
-	allow this information to be available to a parser.
+** Add models for SQL data sources and perhaps bindings to online dictionaries.
+   A preferable online directory to use would be Wikitionary.

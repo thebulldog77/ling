@@ -1,8 +1,5 @@
- ** Implement a test suite.
+A list of all of the possible TODOs can be automatically generated with
+references to their source code locations by running and viewing the Doxygen
+documentation. The list below is the last updated version upon updating of
+the branch.
 
- ** Allow persistence and re-loading.
-	- currently loaded links
-	- currently loaded nodes
-	- all attributes formed by the parser
-    into a tarball (perhaps) that'd be in this format:
-	"wintermute-linguistics-exec-20110408_11:31:40.tar.gz"

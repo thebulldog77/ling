@@ -30,13 +30,14 @@ include(WinterLibsDependencies)
 include(WinterMacros)
 
 find_package(WntrData REQUIRED)
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonLibs REQUIRED)
 find_package(Boost 1.4 COMPONENTS
     python
     REQUIRED)
 
 find_package(Qt4 4.4.3 COMPONENTS
     QtCore
+    QtXml
     QT_DONT_USE_GUI
     REQUIRED)
 
@@ -47,7 +48,7 @@ include("${QT_USE_FILE}")
 set(WNTRLING_INCLUDE_DIR "${WINTER_INCLUDE_INSTALL_DIR}/wntr/ling" CACHE PATH "Includes dir.")
 set(WNTRLING_LIB_DIR "${WINTER_LIB_INSTALL_DIR}" CACHE PATH "Libraries dir.")
 set(WNTRLING_INCLUDE_DIRS "${WNTRLING_INCLUDE_DIR}"
-    "${WNTRDATA_INCLUDE_DIRS}"
+    ${WNTRDATA_INCLUDE_DIRS}
     ${PYTHON_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
     ${QT_INCLUDE_DIR})

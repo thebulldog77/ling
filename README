@@ -1,24 +1,17 @@
- *
- * The code within this directory is free software; you can 
- * redistribute it and/or modify it under the terms of the GNU Library 
- * General Public License as published by the Free Software Foundation;
- * either version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- *
+Wintermute Linguistics (WntrLing)
+============================================
 
-The code in this directory all pertains to Wintermute's ability to process
-natural language. In order to use any of the languages, you must first build
-'wintermute-linguistics-core' as it provides the boilerplate code for NLP.
+1. About WntrLing
 
-See 'INSTALL' for build and install instructions.
-See the 'TODO' and 'HACKING' documents within each folder for pointers on where to
-	assist.
+This set of code represents the very unique and very intricately designed code
+portraying Wintermute's ability to understand and interpret language. Being that
+there isn't only one language known to human beings, the system set in place by
+this NLP engine is capable of handling multiple languages, possibly
+simutaneously as well. This is the future of natural language processing.
+
+2. Current Status
+
+As of August 6, 2011, around 2 AM EST; I (Jacky Alcine) have been working
+intently in attempting to implement an idea I've recently spawned about natural
+language processing for machines. It's heavily based on an idea of linking
+words or symbolic references to a word together, but it 

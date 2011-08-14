@@ -18,13 +18,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.orgccc/licenses/>.
  * @endlegalese
+ *
+ * @todo Remove the connection to QtXml in this code and implement the read/write capabilities of RuleSets in WntrData::Linguistics.
  */
 
 #include "syntax.hpp"
 #include "parser.hpp"
+#include <wntrdata.hpp>
 #include <iostream>
+#include <iomanip>
 #include <boost/tokenizer.hpp>
 #include <QString>
+#include <QVector>
+#include <QTextStream>
 #include <QFile>
 
 using namespace boost;
@@ -35,24 +41,172 @@ using std::endl;
 
 namespace Wintermute {
     namespace Linguistics {
+        RuleSetMap RuleSet::s_rsm;
+
+        Binding::Binding() { }
+
+        Binding::Binding(QDomElement p_ele, const Rule* p_rl) : m_rl(p_rl), m_ele(p_ele) { }
+
+        /// @todo Should it check if its parent Rule accepts it? (Idts.)
+        /// @todo Check against the 'with' attribute and determine if it exists in there.
+        const bool Binding::canBind (const Node &p_nd, const Node& p_nd2) const {
+            const QString l_wh = this->m_ele.attribute ("with");
+            cout << qPrintable(l_wh) << endl;
+
+            return false;
+        }
+
+        /// @todo Form a link with the type being the Rule's type, locale being the rule's locale, and p_nd1 being the source node.
+        const Link* Binding::bind (const Node& p_nd1, const Node& p_nd2) const {
+            return NULL;
+        }
+
+        const Rule* Binding::parentRule () const { return m_rl; }
+
+        Rule::Rule() { }
+
+        Rule::Rule(QDomElement p_ele, const RuleSet* p_rlst) : m_ele(p_ele), m_rlst(p_rlst) {
+            //cout << "(ling) [Rule] Rule " << this->type () << " formed." << endl;
+        }
+
+        const Rule* Rule::obtain(const Node& p_nd) {
+            const RuleSet* l_rlst = RuleSet::obtain (p_nd);
+            return l_rlst->getRuleFor(p_nd);
+        }
+
+        /// @todo Iterate across its BindingVector and find a good one.
+        const Link* Rule::bind(const Node& p_curNode, const Node& p_nextNode) const {
+            for (BindingVector::const_iterator i = m_bndVtr.begin (); i != m_bndVtr.end (); i++){
+                const Binding* l_bnd = *i;
+                if (l_bnd->canBind(p_curNode,p_nextNode))
+                    return l_bnd->bind(p_curNode,p_nextNode);
+            }
+
+            return NULL;
+        }
+
+        /// @todo Question: Should the last word have a chance at linking?
+        const bool Rule::canBind(const Node& p_nd, const Node &p_dstNd) const {
+            for (BindingVector::const_iterator i = m_bndVtr.begin (); i != m_bndVtr.end (); i++){
+                const Binding* l_bnd = *i;
+                if (l_bnd->canBind(p_nd,p_dstNd))
+                    return true;
+            }
+
+            return false;
+        }
+
+        const Binding* Rule::getBindingFor(const Node& p_nd, const Node& p_nd2) const {
+            for (BindingVector::const_iterator i = m_bndVtr.begin (); i != m_bndVtr.end (); i++){
+                const Binding* l_bnd = *i;
+                if (l_bnd->canBind(p_nd,p_nd2))
+                    return l_bnd;
+            }
+
+            return NULL;
+        }
+
+        const bool Rule::appliesFor(const Node& p_nd) const {
+            const QString l_ndStr(p_nd.toString (Node::EXTRA).c_str ());
+            const QString l_rlStr(type().c_str ());
+
+            return (l_ndStr.contains (l_rlStr) || l_ndStr.indexOf (l_rlStr) != -1);
+        }
+
+        const string Rule::type() const { return m_ele.attribute("type").toStdString (); }
+
+        const RuleSet* Rule::parentRuleSet () const { return m_rlst; }
+
+
+        RuleSet::RuleSet() : m_dom((new QDomDocument)), m_rules((new RuleVector)) { __init (); }
+
+        RuleSet::RuleSet(const string &p_lcl) : m_dom((new QDomDocument)), m_rules((new RuleVector)) { __init(p_lcl); }
+
+        void RuleSet::__init(const string& p_lcl) {
+            const string l_dir = Data::Linguistics::Configuration::directory () + string("/locale/") + p_lcl + string("/rules.dat");
+            QFile *l_rlstDoc = new QFile(QString(l_dir.c_str ()));
+
+            l_rlstDoc->open(QIODevice::ReadOnly);
+
+            m_dom->setContent(l_rlstDoc);
+            QDomElement l_ele = m_dom->documentElement ();
+            QDomNode l_domNd = l_ele.firstChild ();
+
+            if (!m_rules->empty()) m_rules->clear();
+
+            while (!l_domNd.isNull ()) {
+                if (l_domNd.isElement ()){
+                    QDomElement l_curEle = l_domNd.toElement ();
+                    if (l_curEle.tagName () == "Rule")
+                        m_rules->push_back(new Rule(l_curEle,this));
+                }
+
+                l_domNd = l_domNd.nextSibling ();
+            }
+
+            //cout << "(ling) [RuleSet] Loaded " << m_rules->size () << " rules." << endl;
+        }
+
+        RuleSet* RuleSet::obtain(const Node& p_ndRef) {
+            RuleSet* l_rlst = NULL;
+
+            if (s_rsm.find(p_ndRef.locale ()) == s_rsm.end()) {
+                l_rlst = new RuleSet(p_ndRef.locale ());
+                s_rsm.insert(RuleSetMap::value_type(p_ndRef.locale (),l_rlst));
+            }
+            else
+                l_rlst = s_rsm.find(p_ndRef.locale ())->second;
+
+            return l_rlst;
+        }
+
+        const Rule* RuleSet::getRuleFor(const Node& p_nd) const {
+            for (RuleVector::const_iterator i = m_rules->begin (); i != m_rules->end (); i++){
+                const Rule* l_rl = *i;
+                if (l_rl->appliesFor(p_nd))
+                    return l_rl;
+            }
+
+            return NULL;
+        }
+
+        const Binding* RuleSet::getBindingFor(const Node& p_nd, const Node& p_nd2) const {
+            const Rule* l_rl = getRuleFor(p_nd);
+            if (l_rl)
+                return l_rl->getBindingFor(p_nd,p_nd2);
+            else
+                return NULL;
+        }
+
+        const bool RuleSet::canBind(const Node& p_nd, const Node& p_nd2) const {
+            return (this->getBindingFor (p_nd,p_nd2) != NULL);
+        }
+
+        const Link* RuleSet::bind(const Node& p_nd, const Node& p_nd2) const {
+            const Binding* l_bnd = this->getBindingFor (p_nd,p_nd2);
+            if (l_bnd)
+                return l_bnd->bind (p_nd,p_nd2);
+            else
+                return NULL;
+        }
+
+        const string RuleSet::locale() const {
+            return m_dom->documentElement ().attribute("locale").toStdString();
+        }
+
         Parser::Parser() : m_lcl ( string() ) { }
 
         Parser::Parser ( const string& p_lcl ) : m_lcl ( p_lcl ) { }
 
-        const string Parser::locale () const {
-            return m_lcl;
-        }
+        const string Parser::locale () const { return m_lcl; }
 
-        void Parser::setLocale ( const string& p_lcl ) {
-            m_lcl = p_lcl;
-        }
+        void Parser::setLocale ( const string& p_lcl ) { m_lcl = p_lcl; }
 
         StringVector Parser::getTokens ( const string& p_str ) {
             tokenizer<> tkn ( p_str );
             StringVector l_theTokens;
 
-            for ( tokenizer<>::const_iterator itr = tkn.begin ();
-                    itr != tkn.end (); ++itr ) {
+            for ( tokenizer<>::const_iterator itr = tkn.begin (); itr != tkn.end (); ++itr ) {
                 const QString l_str ( ( *itr ).c_str() );
                 l_theTokens.push_back ( l_str.toLower ().toStdString () );
             }
@@ -64,10 +218,8 @@ namespace Wintermute {
         NodeVector Parser::formNodes ( StringVector& l_tokens ) {
             NodeVector l_theNodes;
 
-            for ( StringVector::const_iterator itr = l_tokens.begin ();
-                    itr != l_tokens.end (); ++itr ) {
-                const string l_curToken = *itr;
-                const string l_theID = md5 ( l_curToken );
+            for ( StringVector::const_iterator itr = l_tokens.begin (); itr != l_tokens.end (); ++itr ) {
+                const string l_curToken = *itr, l_theID = md5 ( l_curToken );
                 const Node* l_theNode = Node::obtain ( m_lcl, l_theID );
                 const bool l_ndExsts = Node::exists ( m_lcl, l_theID );
 
@@ -85,24 +237,22 @@ namespace Wintermute {
             if ( p_level == p_tree.size () )
                 return ( NodeTree() );
 
-            //cout << "(linguistics) [Parser] Level " << p_level << " should generate " << p_size << " paths." << endl;
+            //cout << "(ling) [Parser] Level " << p_level << " should generate " << p_size << " paths." << endl;
             const NodeVector l_curBranch = p_tree.at ( p_level );
-
             const bool isAtEnd = ( p_level + 1 == p_tree.size () );
 
             if ( l_curBranch.empty () ) {
-                cout << "(linguistics) [Parser] WARNING! Invalid level detected at level " << p_level << "." << endl;
+                //cout << "(ling) [Parser] WARNING! Invalid level detected at level " << p_level << "." << endl;
                 return ( NodeTree() );
             }
 
-            //cout << "(linguistics) [Parser] Level " << p_level << " has " << l_curBranch.size() << " variations." << endl;
+            //cout << "(ling) [Parser] Level " << p_level << " has " << l_curBranch.size() << " variations." << endl;
 
             const int l_mxSize = p_size / l_curBranch.size ( );
 
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
-            //cout << "(linguistics) [Parser] Level " << p_level << " expects " << l_foundStems.size() * l_curBranch.size () << " paths." << endl;
-            // iterate upon current level.
+            //cout << "(ling) [Parser] Level " << p_level << " expects " << l_foundStems.size() * l_curBranch.size () << " paths." << endl;
             for ( NodeVector::const_iterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
                 const Node l_curLvlNd = * jtr;
 
@@ -121,7 +271,7 @@ namespace Wintermute {
                 }
             }
 
-            //cout << "(linguistics) [Parser] Level " << p_level << " generated " << l_chldBranches.size() << " branches." << endl;
+            //cout << "(ling) [Parser] Level " << p_level << " generated " << l_chldBranches.size() << " branches." << endl;
             // Return that.
             return l_chldBranches;
         }
@@ -142,10 +292,10 @@ namespace Wintermute {
                 l_metaTree.push_back ( l_variations );
             }
 
-            //cout << "(linguistics) [Parser] Expanding across " << p_nodVtr.size () << " levels and expecting " << l_totalPaths << " different paths..." << endl;
+            //cout << "(ling) [Parser] Expanding across " << p_nodVtr.size () << " levels and expecting " << l_totalPaths << " different paths..." << endl;
             NodeTree l_tree = expandNodes ( l_metaTree , l_totalPaths , 0 );
 
-            //cout << "(linguistics) [Parser] Found " << l_tree.size() << " paths." << endl;
+            //cout << "(ling) [Parser] Found " << l_tree.size() << " paths." << endl;
 
             return l_tree;
         }
@@ -175,42 +325,68 @@ namespace Wintermute {
             NodeTree l_nodeTree = expandNodes ( l_theNodes );
 
             MeaningVector l_meaningVtr;
-            for (NodeTree::const_iterator itr = l_nodeTree.begin (); itr != l_nodeTree.end (); itr++){
+            for (NodeTree::const_iterator itr = l_nodeTree.begin (); itr != l_nodeTree.end (); itr++) {
                 const NodeVector l_ndVtr = *itr;
+                //cout << "Forming meaning #" << (l_meaningVtr.size () + 1) << "..." << endl;
                 const Meaning* l_meaning = Meaning::form(l_ndVtr);
-                l_meaningVtr.push_back (l_meaning);
+
+                if (l_meaning != NULL)
+                    l_meaningVtr.push_back (l_meaning);
             }
 
             unique(l_meaningVtr.begin(),l_meaningVtr.end ());
 
-            cout << l_nodeTree.size () << " paths." << endl;
+            cout << l_nodeTree.size () << " paths formed " << l_meaningVtr.size () << " meanings." << endl;
         }
 
         Meaning::Meaning() : m_lnk(NULL), m_lnkVtr(NULL) { }
 
-        Meaning::Meaning(const Link* p_lnk, const LinkVector* p_lnkVtr) : m_lnk(p_lnk), m_lnkVtr(p_lnkVtr) {}
+        Meaning::Meaning(const Link* p_lnk, const LinkVector* p_lnkVtr) : m_lnk(p_lnk), m_lnkVtr(p_lnkVtr) {
+            //cout << "(ling) [Meaning] Formed a Meaning with one primary link and " << p_lnkVtr->size () << " total links." << endl;
+        }
 
-        const Meaning* Meaning::form(const Link* p_lnk, const LinkVector* p_lnkVtr){
+        const Meaning* Meaning::form(const Link* p_lnk, const LinkVector* p_lnkVtr) {
             return new Meaning(p_lnk,p_lnkVtr);
         }
 
         /// @todo Convert a list of nodes into a Meaning object.
-        /// @todo Implement a means of determining a link from a NodeVector.
+        /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
+        /// @todo If a word fails the test, crash and explain there's a grammatical mistake OR add another rule if under educational mode.
+        /// @bug Need to avoid hitting the last word; it seems to have nothing to link to, causing the program to segfault.
+        /// @todo What needs to happen, is that after a parse, the resulting set is then set to be parsed once more until one link can be dervived from it.
+        const Meaning* Meaning::form(const NodeVector& p_ndVtr, LinkVector* p_lnkVtr) {
+            NodeVector::const_iterator l_ndItr = p_ndVtr.begin (), l_ndItrEnd = p_ndVtr.end ();
+            NodeVector l_ndVtr;
 
-        const Meaning* Meaning::form(const NodeVector& p_ndVtr){
-            Link* l_rtLnk = NULL;
-            LinkVector* l_rtLnkVtr = new LinkVector;
+            for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++) {
+                const Node* l_nd = &(*l_ndItr);
+                const Node* l_nd2 = &(*(l_ndItr + 1));
+                const bool l_isAtEnd = ((l_ndItr + 1) == p_ndVtr.end () || l_ndItr == p_ndVtr.end ());
+                const Rule* l_rl = Rule::obtain(*l_nd);
 
-            // Form signature of vector.
-            const string l_sig = Node::toString (p_ndVtr);
-            cout << l_sig << endl;
+                if (!l_rl->canBind (*l_nd,*l_nd2))
+                    l_ndVtr.push_back (*l_nd); // Try it again next time.
+                else {
+                    const Link* l_lnk = l_rl->bind(*l_nd,*l_nd2);
+                    cout << (l_lnk == NULL) << endl;
+                    if (l_lnk != NULL){
+                        p_lnkVtr->push_back (l_lnk);
+                        l_ndVtr.push_back (static_cast<Node>(*l_lnk->source ()));
+                        //l_ndItr++; // Move on to the next word.
+                    } else continue;
+                }
+            }
 
-            // Look for familiar links or sub-links so we can reduce the size of this vector.
+            cout << "(ling) [Meaning] Formed " << p_lnkVtr->size () << " links with " << l_ndVtr.size () << " nodes left to parse." << endl;
 
-            // Now, with it reduced to the most simplest form, form the root link.
-
-            // Form the meaning and return it.
-            return new Meaning(l_rtLnk,l_rtLnkVtr);
+            if (!p_lnkVtr->empty ()){
+                if (!(p_lnkVtr->size () >= 1 && l_ndVtr.size () == 1))
+                    return Meaning::form (l_ndVtr,p_lnkVtr);
+                else
+                    return new Meaning(p_lnkVtr->back (),p_lnkVtr);
+            }
+            else
+                return NULL;
         }
 
         const Link* Meaning::base () const { return m_lnk; }
@@ -219,5 +395,3 @@ namespace Wintermute {
 }
 
 // kate: indent-mode cstyle; space-indent on; indent-width 4;
-
-

@@ -22,6 +22,7 @@
 
 #include <string>
 #include <QString>
+#include <QtXml/QDomDocument>
 #include <wntr/data/md5.hpp>
 #include <syntax.hpp>
 
@@ -30,124 +31,261 @@ using namespace std;
 using std::string;
 
 namespace Wintermute {
-    namespace Linguistics {
-        struct Parser;
-        struct Meaning;
+	 namespace Linguistics {
+	  struct Parser;
+	  struct Meaning;
+	  struct RuleSet;
+	  struct Rule;
+	  struct Binding;
 
-        /**
-         * @brief Represents a vector of vector of nodes.
-         * @typedef NodeTree
-         */
-        typedef vector<NodeVector> NodeTree;
+	  /**
+	   * @brief Represents a vector of vector of nodes.
+	   * @typedef NodeTree
+	   */
+	  typedef vector<NodeVector> NodeTree;
+
+	  /**
+	   * @brief Represents a collection of meanings.
+	   * @typedef MeaningVector
+	   */
+	  typedef vector<const Meaning*> MeaningVector;
+
+	  /**
+	   * @brief
+	   * @typedef RuleList
+	   */
+	  typedef vector<Rule*> RuleVector;
+
+	  /**
+	   * @brief
+	   *
+	   * @typedef BindingVector
+	   */
+	  typedef vector<Binding*> BindingVector;
+
+	  /**
+	   * @brief
+	   * @typedef RuleSetMap
+	   */
+	  typedef map<const string, RuleSet*> RuleSetMap;
+
+	  /**
+	   * @brief
+	   * @class Binding parser.hpp "include/wntr/ling/parser.hpp"
+	   */
+	  class Binding {
+		  friend class Rule;
+	  public:
+		  ~Binding();
+		  const Rule* parentRule() const;
+		  const bool canBind(const Node&, const Node& ) const;
+		  const Link* bind(const Node&, const Node& ) const;
+
+	  protected:
+		  Binding(QDomElement , const Rule* );
+		  Binding();
+
+	  private:
+		  QDomElement m_ele;
+		  const Rule* m_rl;
+	  };
+
+	  /**
+	   * @brief Represents a set of bindings that permit linguistics links to be converted into ontological links.
+	   * @class Rule parser.hpp "include/wntr/ling/parser.hpp"
+	   */
+	  class Rule {
+		  friend class RuleSet;
+	  public:
+		   ~Rule();
+		   /**
+			* @brief Copy constructor.
+			* @fn Rule
+			* @param Rule The original Node.
+			*/
+		   Rule(const Rule& );
+		   /**
+			* @brief Returns a Rule that's satisified by this Node.
+			* @fn obtain
+			* @param Node A qualifying Node.
+			*/
+		   static const Rule* obtain(const Node & );
+		   /**
+			* @brief Determines if this Node can be binded with a Node that falls under this rule.
+			* @fn canBind
+			* @param Node The source Node in question.
+			* @param Node The destination Node in question.
+			*/
+		   const bool canBind(const Node & , const Node &) const;
+		   /**
+			* @brief Creates a Link between a qualifying source Node and a destination Node.
+			* @fn bind
+			* @param Node The source Node in question.
+			* @param Node The destination Node in question.
+			*/
+		   const Link* bind(const Node &, const Node & ) const;
+		   /**
+			* @brief Returns a string representing the type of nodes that this Rule looks for.
+			* @fn type
+			*/
+		   const string type() const;
+		   /**
+			* @brief Determines if a Node is qualified to use this Rule.
+			* @fn appliesFor
+			* @param Node The source node in question.
+			*/
+		   const bool appliesFor(const Node& ) const;
+		   /**
+			* @brief Returns a pointer to the Binding that works for the two specified Nodes.
+			* @fn getBindingFor
+			* @param Node The source Node in question.
+			* @param Node The destination Node in question.
+			*/
+		   const Binding* getBindingFor(const Node&, const Node&) const;
+		   /**
+			* @brief Returns a pointer to the RuleSet this originated from.
+			* @fn parentRuleSet
+			*/
+		   const RuleSet* parentRuleSet() const;
+
+	  protected:
+		   /**
+			* @brief Constructor.
+			* @fn Rule
+			* @param QDomElement The element that contains the binding data.
+			* @param RuleSet The parent RuleSet.
+			*/
+		   Rule(QDomElement , const RuleSet* );
+		   /**
+			* @brief Empty constructor.
+			* @fn Rule
+			*/
+		   Rule();
+
+	  private:
+		   QDomElement m_ele;
+		   const RuleSet* m_rlst;
+		   BindingVector m_bndVtr;
+	  };
+
+	  /**
+	   * @brief Represents a source of obtaining rules and directly forming bindings with linguistics information.
+	   * This class manages the obtaining of rules from a certain locale.
+	   * @class RuleSet parser.hpp "include/wntr/ling/parser.hpp"
+	   */
+	  /// @todo Define methods for creating new rules and bindings.
+	  class RuleSet {
+	  public:
+		   ~RuleSet();
+		   static RuleSet* obtain(const Node& );
+		   /**
+			* @brief Returns the Rule that can be used to link with another node.
+			* @fn getRuleFor
+			* @param Node The source node to search for a Rule with.
+			*/
+		   const Rule* getRuleFor(const Node& ) const;
+		   /**
+			* @brief Returns the Binding that can link the two specified nodes.
+			* @fn getBindingFor
+			* @param Node The source node to search for a Rule with.
+			* @param Node The destination node to search against the possible Binding with.
+			*/
+		   const Binding* getBindingFor(const Node& , const Node& ) const;
+		   /**
+			* @brief Determines if a Link can be created between the supplied nodes.
+			* @fn canBind
+			* @param Node The source node for linking in question.
+			* @param Node The destination node for linking in question.
+			*/
+		   const bool canBind(const Node& , const Node &) const;
+		   /**
+			* @brief Creates a Link between two nodes based on the rules in this RuleSet.
+			* @fn bind
+			* @param Node The source node for linking.
+			* @param Node The destination node for linking.
+			*/
+		   const Link* bind(const Node&, const Node & ) const;
+		   /**
+			* @brief The locale in use.
+			* Returns the value of the locale containing the rules for this RuleSet.
+			* @fn locale
+			*/
+		   const string locale() const;
+
+	  protected:
+		/**
+		 * @brief
+		 * @fn RuleSet
+		 */
+		 RuleSet();
 
 		/**
-		 * @brief Represents a collection of meanings.
-		 * @typedef MeaningVector;
+		 * @brief
+		 * @fn RuleSet
+		 * @param
 		 */
-		typedef vector<const Meaning*> MeaningVector;
+		 RuleSet(const string& );
 
-        /**
-         * @brief
-         * @class Parser parser.hpp "include/wntr/ling/parser.hpp"
-         */
-        class Parser {
-        public:
+	  private:
+		   /**
+			* @brief
+			*
+			* @fn __init
+			*/
+		   void __init(const string& = Wintermute::Data::Linguistics::Configuration::locale ());
 
-            /**
-             * @brief
-             * @fn Parser
-             * @param
-             */
-            Parser(const string& );
-            /**
-             * @brief
-             * @fn getLocale
-             */
-            const string locale() const;
-            /**
-             * @brief
-             * @fn setLocale
-             * @param
-             */
-            void setLocale(const string& );
-            /**
-             * @brief
-             * @fn parse
-             * @param
-             */
-            void parse(const string& );
-            /**
-             * @brief
-             * @fn process
-             * @param
-             */
-            void process(const string& );
+		   QDomDocument* m_dom;
+		   RuleVector* m_rules;
+		   static RuleSetMap s_rsm;
+	  };
 
-        protected:
-            /**
-             * @brief
-             * @fn Parser
-             */
-            Parser();
-            mutable string m_lcl;
-
-        private:
-            /**
-             * @brief
-             * @fn getTokens
-             * @param
-             */
-            StringVector getTokens(const string& );
-            /**
-             * @brief
-             * @fn formNodes
-             * @param
-             */
-            NodeVector formNodes(StringVector& );
-            /**
-             * @brief
-             * @fn expandNodes
-             * @param
-             */
-            NodeTree expandNodes(NodeVector& );
-            /**
-             * @brief
-             * @fn expandNodes
-             * @param
-             * @param
-             * @param
-             */
-            NodeTree expandNodes(NodeTree& , const int& = 0, const int& = 0);
-            /**
-             * @brief
-             *
-             * @fn formMeaning
-             * @param
-             */
-            const Meaning formMeaning(const NodeVector& );
-            /**
-             * @brief
-             * @fn formShorthand
-             * @param
-             * @param
-             */
-            static const string formShorthand(const NodeVector& , const Node::FormatDensity& = Node::FULL );
-        };
-
-        class Meaning {
-        public:
-            const Link* base() const;
-            const LinkVector* siblings() const;
-            static const Meaning* form(const NodeVector& );
-            static const Meaning* form(const Link* = NULL, const LinkVector* = NULL);
-
+	  /**
+	   * @brief Encapsulates the primary object used to cast a simple string representing a bit of language into machine-interpretable ontological information.
+	   * @class Parser parser.hpp "include/wntr/ling/parser.hpp"
+	   */
+		class Parser {
+		public:
+			Parser(const string& );
+			const string locale() const;
+			void setLocale(const string& );
+			void parse(const string& );
+			void process(const string& );
 		protected:
-			Meaning();
-			Meaning(const Link* = NULL, const LinkVector* = NULL);
+			Parser();
+			mutable string m_lcl;
+		private:
+			StringVector getTokens(const string& );
+			NodeVector formNodes(StringVector& );
+			NodeTree expandNodes(NodeVector& );
+			NodeTree expandNodes(NodeTree& , const int& = 0, const int& = 0);
+			const Meaning formMeaning(const NodeVector& );
+			static const string formShorthand(const NodeVector& , const Node::FormatDensity& = Node::FULL );
+	  };
 
-        private:
-            const Link* m_lnk;
-            const LinkVector* m_lnkVtr;
-        };
-    }
+	  /**
+	   * @brief Represents the end-result of linguistics linking and provides an easier means of glancing into the linking process.
+	   * @class Meaning parser.hpp "include/wntr/ling/parser.hpp"
+	   */
+	  class Meaning {
+	  public:
+		  ~Meaning();
+		  /**
+		   * @brief The root link that can be determined as the base, underlying Meaning of the parsed text.
+		   * @fn base
+		   */
+		  const Link* base() const;
+		  const LinkVector* siblings() const;
+		  static const Meaning* form(const NodeVector& , LinkVector* = new LinkVector);
+		  static const Meaning* form(const Link* = NULL, const LinkVector* = NULL);
+		  const string toText() const;
+
+	  protected:
+		  Meaning();
+		  Meaning(const Link* = NULL, const LinkVector* = NULL);
+
+	  private:
+		   const Link* m_lnk;
+		   const LinkVector* m_lnkVtr;
+	  };
+	 }
 }
