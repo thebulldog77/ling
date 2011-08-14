@@ -47,6 +47,17 @@ namespace Wintermute {
 
         Binding::Binding(QDomElement p_ele, const Rule* p_rl) : m_rl(p_rl), m_ele(p_ele) { }
 
+        const Binding* Binding::obtain(const Node& p_nd, const Node& p_nd2){
+            const Rule* l_rl = Rule::obtain (p_nd);
+            if (!l_rl) return NULL;
+            const Binding* l_bnd = l_rl->getBindingFor (p_nd,p_nd2);
+            return l_bnd;
+        }
+
+        const QString Binding::getProperty(const QString &p_attr) const {
+            return m_ele.attribute (p_attr);
+        }
+
         /// @todo Should it check if its parent Rule accepts it? (Idts.)
         /// @todo Check against the 'with' attribute and determine if it exists in there.
         const bool Binding::canBind (const Node &p_nd, const Node& p_nd2) const {
@@ -67,7 +78,7 @@ namespace Wintermute {
                 if (l_ndStr.contains (l_s) || l_ndStr.indexOf (l_s) != -1) return true;
             }
 
-            cout << p_nd.toString (Node::EXTRA) << " " << qPrintable(l_ndStr) << endl;
+            //cout << "(ling) [Binding] Binding failed for %ND2 ->%ND1 : " << p_nd.toString (Node::EXTRA) << " " << qPrintable(l_ndStr) << endl;
 
             return false;
         }
@@ -84,8 +95,13 @@ namespace Wintermute {
                 Node *l_tmp = l_nd;
                 l_nd = l_nd2;
                 l_nd2 = l_tmp;
-                cout << "(ling) [Binding] Reversed the type and locale of the link." << endl;
-            }
+                //cout << "(ling) [Binding] Reversed the type and locale of the link." << endl;
+            } else if (m_ele.attribute ("postAction").contains ("othertype")){
+                l_type = p_nd2.toString (Node::MINIMAL);
+            } else if (m_ele.attribute ("postAction").contains ("thistype")){
+                l_type = p_nd1.toString (Node::MINIMAL);
+            } else {}
+
             return Link::form(static_cast<const FlatNode*>(l_nd), static_cast<const FlatNode*>(l_nd2),
                             l_type, l_lcl);
         }
@@ -158,24 +174,23 @@ namespace Wintermute {
 
         void RuleSet::__init(const string& p_lcl) {
             const string l_dir = Data::Linguistics::Configuration::directory () + string("/locale/") + p_lcl + string("/rules.dat");
+            cout << "(ling) [RuleSet] Loading '" << l_dir << "'..." << endl;
             QFile *l_rlstDoc = new QFile(QString(l_dir.c_str ()));
 
             l_rlstDoc->open(QIODevice::ReadOnly);
 
             m_dom->setContent(l_rlstDoc);
             QDomElement l_ele = m_dom->documentElement ();
-            QDomNode l_domNd = l_ele.firstChild ();
+            QDomNodeList l_ruleNdLst = l_ele.elementsByTagName ("Rule");
+            QDomNodeList l_importsLst = l_ele.elementsByTagName ("Import");
 
             if (!m_rules->empty()) m_rules->clear();
 
-            while (!l_domNd.isNull ()) {
-                if (l_domNd.isElement ()){
-                    QDomElement l_curEle = l_domNd.toElement ();
-                    if (l_curEle.tagName () == "Rule")
-                        m_rules->push_back(new Rule(l_curEle,this));
-                }
-
-                l_domNd = l_domNd.nextSibling ();
+            for (int i = 0; i < l_ruleNdLst.count (); i++){
+                QDomNode l_domNd = l_ruleNdLst.at (i);
+                QDomElement l_curEle = l_domNd.toElement ();
+                if (l_curEle.tagName () == "Rule")
+                    m_rules->push_back(new Rule(l_curEle,this));
             }
 
             //cout << "(ling) [RuleSet] Loaded " << m_rules->size () << " rules." << endl;
@@ -369,6 +384,7 @@ namespace Wintermute {
 
             unique(l_meaningVtr.begin(),l_meaningVtr.end ());
             cout << "(ling) [Parser] " << l_nodeTree.size () << " paths formed " << l_meaningVtr.size () << " meanings." << endl;
+            cout << endl << setw(20) << setfill('=') << " " << endl;
 
             for (MeaningVector::const_iterator itr2 = l_meaningVtr.begin (); itr2 != l_meaningVtr.end (); itr2++){
                 const Meaning* l_mngItr = *itr2;
@@ -389,50 +405,79 @@ namespace Wintermute {
         /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
         /// @todo If a word fails the test, crash and explain there's a grammatical mistake OR add another rule if under educational mode.
         const Meaning* Meaning::form(const NodeVector& p_ndVtr, LinkVector* p_lnkVtr) {
+            cout << endl << setw(20) << setfill('=') << " " << endl;
             NodeVector::const_iterator l_ndItr = p_ndVtr.begin (), l_ndItrEnd = p_ndVtr.end ();
             NodeVector l_ndVtr;
-            int i = 0;
 
-            for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++, i++) {
-                cout << i << endl;
+            cout << "(ling) [Meaning] Current nodes: '";
+            for (int i = 0; i < p_ndVtr.size (); i++)
+                cout << p_ndVtr.at (i).symbol() << " ";
+            cout << "'" << endl;
+
+            QStringList* l_hideFilter = NULL;
+            bool l_hideOther = false;
+
+            for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++) {
                 const Node *l_nd, *l_nd2;
                 if (p_ndVtr.size () == 2){
-                    l_nd = &p_ndVtr.front ();
-                    l_nd2 = &p_ndVtr.back ();
-                }
-                else {
-                    if (l_ndItr == p_ndVtr.end ())
-                        break;
-                    else {
-                        l_nd = &(*(l_ndItr));
-                        l_nd2 = &(*(l_ndItr + 1));
-                    }
+                    l_nd = &p_ndVtr.front (); l_nd2 = &p_ndVtr.back ();
+                    if (l_nd == l_nd2) break; // Happens rarely.
+                } else {
+                    if ((l_ndItr + 1) != p_ndVtr.end ()){
+                        l_nd = &(*(l_ndItr)); l_nd2 = &(*(l_ndItr + 1));
+                    } else break;
                 }
 
-                const Rule* l_rl = Rule::obtain(*l_nd);
+                /*if (l_hideFilter){
+                    const QString l_k(l_nd->toString (Node::EXTRA).c_str ());
+                    bool l_b = false;
+                    foreach (const QString l_s, *l_hideFilter)
+                        if (l_k.contains (l_s)) l_b = true;
 
-                if (p_ndVtr.size () == 2)
-                    cout << l_nd->symbol () << " & " << l_nd2->symbol () << endl;
+                    if (!l_b) l_hideFilter = NULL;
+                }*/
 
-                if (l_rl){
-                    if (!l_rl->canBind (*l_nd,*l_nd2))
-                        l_ndVtr.push_back (*l_nd); // Try it again next time,
-                    else {
-                        const Link* l_lnk = l_rl->bind(*l_nd,*l_nd2);
-                        p_lnkVtr->push_back (l_lnk);
-                        l_ndItr++; // Move on to the next word.
+                const Binding* l_bnd = Binding::obtain(*l_nd,*l_nd2);
+                const Link* l_lnk;
+                if (l_bnd){
+                    l_lnk = l_bnd->bind (*l_nd,*l_nd2);
+                    p_lnkVtr->push_back (l_lnk);
+
+                    if (l_bnd->getProperty ("hide") != "yes" || !l_hideOther){
                         l_ndVtr.push_back (static_cast<Node>(*l_lnk->source ()));
                     }
-                }
+                    else cout << "(ling) [Meaning] *** Hid '" << l_lnk->source ()->symbol () << "' from future parsing." << endl;
+
+                    if (l_bnd->getProperty ("hideOther") == "yes"){
+                        l_hideOther = true;
+                        cout << "(ling) [Meaning] *** Hid '" << l_lnk->destination ()->symbol () << "' from future parsing on next pass." << endl;
+                    }
+
+                    if (l_bnd->getProperty("skipWord") != "no") { l_ndItr++; }
+                    else cout << setw(20) << right << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination ()->symbol () << "'." << endl;
+
+                    if (l_bnd->getProperty("hideFilter").length () != 0){
+                        const QString l_d = l_bnd->getProperty ("hideFilter");
+                        QStringList *l_e = new QStringList;
+
+                        if (l_d.contains (",")){
+                            QStringList d = l_d.split (",");
+
+                        } else l_e->append (l_d);
+
+                        l_hideFilter = l_e;
+                    }
+
+                } else l_lnk = NULL;
             }
 
-            cout << "(ling) [Meaning] Formed " << p_lnkVtr->size () << " links with " << l_ndVtr.size () << " nodes left to parse." << endl;
+            //cout << "(ling) [Meaning] Formed " << p_lnkVtr->size () << " links with " << l_ndVtr.size () << " nodes left to parse." << endl;
 
             if (!p_lnkVtr->empty ()){
                 if (!(p_lnkVtr->size () >= 1 && l_ndVtr.size () == 1))
                     return Meaning::form (l_ndVtr , p_lnkVtr);
                 else {
-                    cout << "(ling) [Meaning] Crafted a Meaning of " << p_lnkVtr->size () << " links." << endl;
+                    cout << "(ling) [Meaning] Crafted a Meaning of " << p_lnkVtr->size () << " link(s)." << endl;
                     return new Meaning(p_lnkVtr->back () , p_lnkVtr);
                 }
             }
@@ -444,10 +489,12 @@ namespace Wintermute {
         const LinkVector* Meaning::siblings () const { return m_lnkVtr; }
 
         const string Meaning::toText () const {
-            cout << m_lnkVtr->size () << " links." << endl;
+            cout << "(ling) [Meaning] This Meaning encapsulates " << m_lnkVtr->size () << " link(s)." << endl;
+
             for (LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++){
                 const Link* l_lnk = *i;
-                cout << l_lnk->source ()->symbol () << " -> " << l_lnk->destination ()->symbol ()  << endl;
+                cout << l_lnk->source ()->symbol () << "(" << l_lnk->source ()->toString (Node::EXTRA) << ") -> "
+                     << l_lnk->destination ()->symbol () << "(" << l_lnk->destination ()->toString (Node::EXTRA) << ")" << endl;
             }
 
             return " ";

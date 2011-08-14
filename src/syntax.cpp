@@ -99,7 +99,7 @@ namespace Wintermute {
 
 	  const Node* Node::buildPseudo(const string& p_lcl, const string& p_id, const string& p_sym) {
 		   Leximap l_map;
-		   l_map.insert (Leximap::value_type( "-1", "Ap" ));
+		   l_map.insert (Leximap::value_type( "-1", "Bz" ));
 		   return new Node( ( new Lexidata ( p_id, p_lcl, p_sym, l_map ) ) );
 	  }
 

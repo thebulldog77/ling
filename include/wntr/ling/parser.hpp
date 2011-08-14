@@ -77,8 +77,10 @@ namespace Wintermute {
 		  friend class Rule;
 	  public:
 		  ~Binding();
+		  static const Binding* obtain(const Node&, const Node& );
 		  const Rule* parentRule() const;
 		  const bool canBind(const Node&, const Node& ) const;
+		  const QString getProperty(const QString& ) const;
 		  const Link* bind(const Node&, const Node& ) const;
 
 	  protected:
