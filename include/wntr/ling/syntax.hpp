@@ -23,7 +23,8 @@
 #define __SYNTAX_HPP__
 
 #include <string>
-#include <wntr/data/wntrdata.hpp>
+#include <syntax.hpp>
+#include <wntrdata.hpp>
 
 using namespace std;
 using namespace Wintermute::Data::Linguistics;
@@ -34,291 +35,101 @@ using std::string;
 using Wintermute::Data::Linguistics::Lexidata;
 
 namespace Wintermute {
-     namespace Linguistics {
-	  struct Link;
-	  struct Node;
-	  struct FlatNode;
-	  
-	  /**
-	   * @brief
-	   *
-	   * @typedef StringCollection
-	   */
-	  typedef map<const string, const string> StringCollection;
-	  /**
-	   * @brief
-	   *
-	   * @typedef StringVector
-	   */
-	  typedef vector<string> StringVector;
-	  /**
-	   * @brief
-	   *
-	   * @typedef NodeVector
-	   */
-	  typedef vector<Node> NodeVector;
-	  
-	  /**
-	   * @brief
-	   *
-	   * @typedef LinkVector
-	   */
-	  typedef vector<const Link*> LinkVector;
-	  /**
-	   * @brief
-	   *
-	   * @typedef RootLink
-	   */
-	  typedef pair<const Link*, const LinkVector> RootLink;
-	  
-	  /**
-	   * @brief
-	   *
-	   * @class Node syntax.hpp "include/wntr/ling/syntax.hpp"
-	   */
-	  class Node {
-	       friend class FlatNode;
-	  protected:
-	       /**
-		* @brief
-		*
-		* @fn Node
-		* @param
-		*/
-	       Node(Lexidata* );
-	       Lexidata* m_lxdt;
-	       
-	  public:
-	       /**
-		* @brief
-		*
-		* @fn Node
-		*/
-	       Node();
-	       /**
-		* @brief
-		* @enum FormatDensity
-		*/
-	       enum FormatDensity {
-		    FULL = 0,
-		    MINIMAL,
-		    EXTRA
-	       };
-	       
-	       ~Node();
-	       /**
-		* @brief
-		*
-		* @fn getID
-		*/
-	       const string id() const;
-	       /**
-		* @brief
-		*
-		* @fn getLocale
-		*/
-	       const string locale() const;
-	       /**
-		* @brief
-		*
-		* @fn getSymbol
-		*/
-	       const string symbol() const;
-	       /**
-		* @brief
-		*
-		* @fn getFlags
-		*/
-	       const Leximap* flags() const;
-	       /**
-		* @brief
-		*
-		* @fn toString
-		*/
-	       const string toString(const FormatDensity& = FULL) const;
-	       static const string toString(const Node& , const FormatDensity& = FULL);
-	       static const string toString(const NodeVector& , const FormatDensity& = FULL);
-	       static const Node* fromString(const string& );
-	       /**
-		* @brief
-		*
-		* @fn obtain
-		* @param
-		* @param
-		*/
-	       static const Node* obtain(const string&, const string& );
-	       /**
-		* @brief
-		*
-		* @fn buildPseudo
-		* @param
-		* @param
-		* @param
-		*/
-	       static const Node* buildPseudo(const string&, const string&, const string& );
-	       /**
-		* @brief
-		*
-		* @fn exists
-		* @param
-		* @param
-		*/
-	       static const bool exists(const string&, const string& );
-	  };
-	  
-	  /**
-	   * @brief
-	   *
-	   * @class FlatNode syntax.hpp "include/wntr/ling/syntax.hpp"
-	   */
-	  class FlatNode : public Node {
-	  protected:
-	       /**
-		* @brief
-		*
-		* @fn FlatNode
-		* @param
-		* @param
-		*/
-	       FlatNode(const Node&, const int&);
-	       /**
-		* @brief
-		*
-		* @fn FlatNode
-		* @param
-		* @param
-		* @param
-		* @param
-		*/
-	       FlatNode(const string&, const string&,
-			const string&, const StringCollection::value_type& );
-	       
-	  public:
-	       /**
-		* @brief
-		*
-		* @fn FlatNode
-		*/
-	       FlatNode();
-	       /**
-		* @brief
-		*
-		* @fn FlatNode
-		* @param p_nd
-		*/
-	       FlatNode(const Node& p_nd) : Node(p_nd.m_lxdt) {}
-	       ~FlatNode();
-	       /**
-		* @brief
-		*
-		* @fn getType
-		*/
-	       const char type() const;
-	       /**
-		* @brief
-		*
-		* @fn form
-		* @param
-		* @param
-		* @param
-		* @param
-		*/
-	       static const FlatNode* form(const string&, const string&, const string&, const StringCollection::value_type& );
-	       /**
-		* @brief
-		*
-		* @fn form
-		* @param
-		* @param
-		*/
-	       static const FlatNode* form(const Node& , const int& = 0);
-	       /**
-		* @brief
-		*
-		* @fn expand
-		* @param
-		*/
-	       static NodeVector expand(const Node& );
-	  };
-	  
-	  /**
-	   * @brief
-	   *
-	   * @class Link syntax.hpp "include/wntr/ling/syntax.hpp"
-	   */
-	  class Link {
-	  public:
-	       /**
-		* @brief
-		*
-		* @fn form
-		* @param
-		* @param
-		* @param
-		* @param
-		*/
-	       static const Link* form(const FlatNode* , const FlatNode* , const string&, const string&);
-	       /**
-		* @brief
-		*
-		* @fn fromString
-		* @param
-		*/
-	       static const Link* fromString(const string&);
-	       /**
-		* @brief
-		*
-		* @fn source
-		*/
-	       const FlatNode* source() const;
-	       /**
-		* @brief
-		*
-		* @fn destination
-		*/
-	       const FlatNode* destination() const;
-	       /**
-		* @brief
-		*
-		* @fn locale
-		*/
-	       const string locale() const;
-	       /**
-		* @brief
-		*
-		* @fn toString
-		*/
-	       const string toString() const;
-	       
-	  protected:
-	       /**
-		* @brief
-		*
-		* @fn Link
-		* @param
-		* @param
-		* @param
-		* @param
-		*/
-	       Link(const FlatNode* , const FlatNode* , const string&, const string&);
-	       /**
-		* @brief
-		*
-		* @fn Link
-		*/
-	       Link();
-	       
-	  private:
-	       const FlatNode m_src;
-	       const FlatNode m_dst;
-	       const string m_flgs;
-	       const string m_lcl;
-	  };
-     }
+    namespace Linguistics {
+        struct Link;
+        struct Node;
+        struct FlatNode;
+
+        typedef map<const string, const string> StringCollection;
+        typedef vector<string> StringVector;
+        typedef vector<Node*> NodeVector;
+        typedef vector<const Link*> LinkVector;
+        typedef pair<const Link*, const LinkVector> RootLink;
+
+        class Node : public QObject {
+            Q_OBJECT
+
+            Q_PROPERTY(const string id READ id)
+            Q_PROPERTY(const string locale READ locale)
+            Q_PROPERTY(const string symbol READ symbol)
+            Q_PROPERTY(const Leximap* flags READ flags)
+
+            friend class FlatNode;
+            protected:
+                Node ( Lexidata* );
+                Lexidata* m_lxdt;
+
+            public:
+                Node();
+                enum FormatDensity {
+                    FULL = 0,
+                    MINIMAL,
+                    EXTRA
+                };
+
+                ~Node();
+                const string id() const;
+                const string locale() const;
+                const string symbol() const;
+                const Leximap* flags() const;
+                const string toString ( const FormatDensity& = FULL ) const;
+                static const string toString ( const Node* , const FormatDensity& = FULL );
+                static const string toString ( const NodeVector& , const FormatDensity& = FULL );
+                static const Node* fromString ( const string& );
+                static const Node* obtain ( const string&, const string& );
+                static const Node* buildPseudo ( const string&, const string&, const string& );
+                static const bool exists ( const string&, const string& );
+        };
+
+        class FlatNode : public Node {
+            Q_OBJECT
+
+            Q_PROPERTY(const char type READ type)
+
+            protected:
+                FlatNode ( const Node*, const int& );
+                FlatNode ( const string&, const string&, const string&, const StringCollection::value_type& );
+
+            public:
+                FlatNode();
+                FlatNode ( const Node* p_nd ) : Node ( p_nd->m_lxdt ) {}
+                ~FlatNode();
+                const char type() const;
+                static const FlatNode* form ( const string&, const string&, const string&, const StringCollection::value_type& );
+                static const FlatNode* form ( const Node* , const int& = 0 );
+                static NodeVector expand ( const Node* );
+        };
+
+        class Link : public QObject {
+            Q_OBJECT
+
+            Q_PROPERTY(const FlatNode* source READ source)
+            Q_PROPERTY(const FlatNode* destination READ destination)
+            Q_PROPERTY(const string locale READ locale)
+            Q_PROPERTY(const string flags READ flags)
+
+            public:
+                static const Link* form ( const FlatNode* , const FlatNode* , const string&, const string& );
+                static const Link* fromString ( const string& );
+                const FlatNode* source() const;
+                const FlatNode* destination() const;
+                const string locale() const;
+                const string flags() const;
+                const string toString() const;
+
+            protected:
+                Link ( const FlatNode* , const FlatNode* , const string&, const string& );
+                Link();
+
+            private:
+                const FlatNode* m_src;
+                const FlatNode* m_dst;
+                const string m_flgs;
+                const string m_lcl;
+        };
+    }
 }
-#endif	/* __SYNTAX_HPP__ */
 
+#endif	/* __SYNTAX_HP */
 
-
-
-
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

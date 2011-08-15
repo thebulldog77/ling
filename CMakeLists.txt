@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(WntrLing)
 
+set(MOC_CODE )
 set(WNTRLING_MAJOR_VERSION 0)
 set(WNTRLING_MINOR_VERSION 1)
 set(WNTRLING_VERSION
@@ -65,13 +66,16 @@ include_directories(${WNTRLING_INCLUDE_DIRS}
 file(GLOB WNTRLING_SHPP include/wntr/ling/*.hpp)
 file(GLOB WNTRLING_SCPP src/*.cpp)
 
+QT4_WRAP_CPP(MOC_CODE "${WNTRLING_SHPP}")
+
 #
 # Targets
 #
 add_library(wntrling
     SHARED
     ${WNTRLING_SHPP}
-    ${WNTRLING_SCPP})
+    ${WNTRLING_SCPP}
+    ${MOC_CODE})
 
 set_target_properties(wntrling PROPERTIES
     VERSION ${GENERIC_LIB_VERSION}
@@ -82,6 +86,7 @@ target_link_libraries(wntrling ${WNTRLING_LIBRARIES})
 #
 # Configs
 #
+
 configure_file("cmake/WntrLingConfig.cmake.in"
     "${PROJECT_BINARY_DIR}/InstallFiles/WntrLingConfig.cmake" @ONLY)
 

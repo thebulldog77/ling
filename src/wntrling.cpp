@@ -26,7 +26,8 @@
 using namespace boost::python;
 
 namespace Wintermute {
-     namespace Linguistics {
-	  /// @todo Expose API to both C and Python here.
-     }
+    namespace Linguistics {
+        /// @todo Expose API to both C and Python here.
+    }
 }
+// kate: indent-mode cstyle; space-indent on; indent-width 4; 

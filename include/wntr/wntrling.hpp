@@ -25,3 +25,4 @@
 #include <wntr/ling/core/md5.hpp>
 #include <wntr/ling/core/syntax.hpp>
 #include <wntr/ling/core/parser.hpp>
+// kate: indent-mode cstyle; space-indent on; indent-width 4; 
