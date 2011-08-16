@@ -86,7 +86,7 @@ namespace Wintermute {
         }
 
         const Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
-            Lexidata l_lexdata ( p_id , p_lcl );
+            Lexidata* l_lexdata = new Lexidata( p_id , p_lcl );
 
             if ( exists ( p_lcl , p_id ) ) {
                 LocalStorage* l_strg = dynamic_cast<LocalStorage*> ( LocalStorage::obtain ( l_lexdata ) );
@@ -104,8 +104,7 @@ namespace Wintermute {
         }
 
         const bool Node::exists ( const string& p_lcl, const string& p_id ) {
-            Lexidata l_lexdata ( p_id , p_lcl );
-            return Storage::exists ( l_lexdata );
+            return Storage::exists ( (new Lexidata( p_id , p_lcl )) );
         }
 
         Node::~Node () {}

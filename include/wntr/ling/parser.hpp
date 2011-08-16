@@ -85,16 +85,23 @@ namespace Wintermute {
             Q_OBJECT
             friend class Rule;
             public:
-                ~Binding();
+                explicit Binding() : m_rl(NULL) { }
+                Binding(const Binding& p_bnd) : m_rl(p_bnd.m_rl), m_ele(p_bnd.m_ele) { }
+                ~Binding() { }
                 static const Binding* obtain ( const Node&, const Node& );
                 const Rule* parentRule() const;
-                const bool canBind ( const Node&, const Node& ) const;
-                const QString getProperty ( const QString& ) const;
+                /**
+                 * @brief The ability of binding is measured on a scale from 0.0 to 1.0; where 0.0 is no chance at all and 1.0 is equality.
+                 * @fn canBind
+                 * @param
+                 * @param
+                 */
+                const double canBind ( const Node&, const Node& ) const;
+                const QString getAttrValue ( const QString& ) const;
                 const Link* bind ( const Node&, const Node& ) const;
 
             protected:
                 Binding ( QDomElement , const Rule* );
-                Binding();
 
             private:
                 QDomElement m_ele;
@@ -111,13 +118,13 @@ namespace Wintermute {
 
             friend class RuleSet;
             public:
-                ~Rule();
+                ~Rule() { }
                 /**
                  * @brief Copy constructor.
                  * @fn Rule
                  * @param Rule The original Node.
                  */
-                Rule ( const Rule& );
+                Rule ( const Rule& p_rl ) : m_ele(p_rl.m_ele), m_rlst(p_rl.m_rlst), m_bndVtr(p_rl.m_bndVtr) { }
                 /**
                  * @brief Returns a Rule that's satisified by this Node.
                  * @fn obtain
@@ -148,7 +155,7 @@ namespace Wintermute {
                  * @fn appliesFor
                  * @param Node The source node in question.
                  */
-                const bool appliesFor ( const Node& ) const;
+                const double appliesFor ( const Node& ) const;
                 /**
                  * @brief Returns a pointer to the Binding that works for the two specified Nodes.
                  * @fn getBindingFor
@@ -162,21 +169,21 @@ namespace Wintermute {
                  */
                 const RuleSet* parentRuleSet() const;
 
-            protected:
                 /**
                  * @brief Constructor.
                  * @fn Rule
                  * @param QDomElement The element that contains the binding data.
                  * @param RuleSet The parent RuleSet.
                  */
-                Rule ( QDomElement , const RuleSet* );
+                explicit Rule ( QDomElement p_ele , const RuleSet* p_rlst ) : m_ele(p_ele), m_rlst(p_rlst) { __init(); }
                 /**
                  * @brief Empty constructor.
                  * @fn Rule
                  */
-                Rule();
+                Rule( ) : m_rlst(NULL) { }
 
             private:
+                void __init();
                 QDomElement m_ele;
                 const RuleSet* m_rlst;
                 BindingVector m_bndVtr;
@@ -191,10 +198,9 @@ namespace Wintermute {
         class RuleSet : public QObject {
             Q_OBJECT
 
-            Q_PROPERTY(string locale READ locale)
+            Q_PROPERTY(string locale READ locale WRITE setLocale)
 
             public:
-                ~RuleSet();
                 static RuleSet* obtain ( const Node& );
                 /**
                  * @brief Returns the Rule that can be used to link with another node.
@@ -230,24 +236,17 @@ namespace Wintermute {
                  */
                 const string locale() const;
 
-            protected:
-                /**
-                 * @brief
-                 * @fn RuleSet
-                 */
-                RuleSet();
+                void setLocale(const string& = Wintermute::Data::Linguistics::Configuration::locale ());
 
-                /**
-                 * @brief
-                 * @fn RuleSet
-                 * @param
-                 */
-                RuleSet ( const string& );
+                explicit RuleSet ( const string& p_lcl = Wintermute::Data::Linguistics::Configuration::locale ()  ) : m_dom((new QDomDocument)),
+                    m_rules((new RuleVector)) { __init(p_lcl); }
+
+                RuleSet(const RuleSet& p_rlst) : m_dom(p_rlst.m_dom), m_rules(p_rlst.m_rules) { }
+                ~RuleSet() { }
 
             private:
                 /**
                  * @brief
-                 *
                  * @fn __init
                  */
                 void __init ( const string& = Wintermute::Data::Linguistics::Configuration::locale () );
@@ -267,14 +266,17 @@ namespace Wintermute {
             Q_PROPERTY(string locale READ locale WRITE setLocale)
 
             public:
-                Parser ( const string& );
+                explicit Parser( const Parser& p_prsr ) : m_lcl(p_prsr.m_lcl) {}
+                Parser ( const string& = Wintermute::Data::Linguistics::Configuration::locale ()  );
+                ~Parser() { }
                 const string locale() const;
                 void setLocale ( const string& = Wintermute::Data::Linguistics::Configuration::locale ());
                 void parse ( const string& );
                 void process ( const string& );
+
             protected:
-                Parser();
                 mutable string m_lcl;
+
             private:
                 StringVector getTokens ( const string& );
                 NodeVector formNodes ( StringVector& );
@@ -293,30 +295,34 @@ namespace Wintermute {
 
             Q_PROPERTY(const Link* base READ base)
             Q_PROPERTY(const LinkVector* siblings READ siblings)
+
             public:
-                ~Meaning();
-                /**
-                 * @brief The root link that can be determined as the base, underlying Meaning of the parsed text.
-                 * @fn base
-                 */
+                explicit Meaning(const LinkVector* p_lnkVtr = NULL) : m_lnkVtr(p_lnkVtr) {}
+                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { }
+                ~Meaning() { }
                 const Link* base() const;
                 const LinkVector* siblings() const;
                 const string toText() const;
                 const LinkVector* isLinkedTo(const Node& ) const;
                 const LinkVector* isLinkedBy(const Node& ) const;
                 static const Meaning* form ( const NodeVector& , LinkVector* = new LinkVector );
-                static const Meaning* form ( const Link* = NULL, const LinkVector* = NULL );
+                static const Meaning* form ( const LinkVector* = NULL );
 
             protected:
-                Meaning();
-                Meaning ( const Link* = NULL, const LinkVector* = NULL );
 
             private:
-                const Link* m_lnk;
                 const LinkVector* m_lnkVtr;
         };
+
     }
 }
+
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Parser)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Binding)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::RuleSet)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Meaning)
+
 
 #endif /* __PARSER_HPP__ */
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

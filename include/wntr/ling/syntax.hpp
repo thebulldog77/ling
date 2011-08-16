@@ -47,12 +47,12 @@ namespace Wintermute {
         typedef pair<const Link*, const LinkVector> RootLink;
 
         class Node : public QObject {
-            Q_OBJECT
-
+            Q_GADGET
             Q_PROPERTY(const string id READ id)
             Q_PROPERTY(const string locale READ locale)
             Q_PROPERTY(const string symbol READ symbol)
             Q_PROPERTY(const Leximap* flags READ flags)
+            Q_ENUMS(FormatDensity)
 
             friend class FlatNode;
             protected:
@@ -60,7 +60,8 @@ namespace Wintermute {
                 Lexidata* m_lxdt;
 
             public:
-                Node();
+                explicit Node();
+                Node( const Node& p_nd ) { this->m_lxdt = p_nd.m_lxdt; }
                 enum FormatDensity {
                     FULL = 0,
                     MINIMAL,
@@ -93,6 +94,7 @@ namespace Wintermute {
             public:
                 FlatNode();
                 FlatNode ( const Node* p_nd ) : Node ( p_nd->m_lxdt ) {}
+                FlatNode ( const FlatNode& p_nd ) : Node ( p_nd ) {}
                 ~FlatNode();
                 const char type() const;
                 static const FlatNode* form ( const string&, const string&, const string&, const StringCollection::value_type& );
@@ -102,7 +104,6 @@ namespace Wintermute {
 
         class Link : public QObject {
             Q_OBJECT
-
             Q_PROPERTY(const FlatNode* source READ source)
             Q_PROPERTY(const FlatNode* destination READ destination)
             Q_PROPERTY(const string locale READ locale)
@@ -116,10 +117,12 @@ namespace Wintermute {
                 const string locale() const;
                 const string flags() const;
                 const string toString() const;
+                Link();
+                Link(const Link& p_lnk ) : m_src(p_lnk.m_src), m_dst(p_lnk.m_dst),
+                    m_flgs(p_lnk.m_flgs), m_lcl(p_lnk.m_lcl) { }
 
             protected:
                 Link ( const FlatNode* , const FlatNode* , const string&, const string& );
-                Link();
 
             private:
                 const FlatNode* m_src;
@@ -129,6 +132,10 @@ namespace Wintermute {
         };
     }
 }
+
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Link)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Node)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::FlatNode)
 
 #endif	/* __SYNTAX_HP */
 
