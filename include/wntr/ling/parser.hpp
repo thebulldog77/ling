@@ -50,26 +50,26 @@ namespace Wintermute {
          * @brief Represents a vector of vector of nodes.
          * @typedef NodeTree
          */
-        typedef vector<NodeVector> NodeTree;
+        typedef QVector<NodeVector> NodeTree;
 
         /**
          * @brief Represents a collection of meanings.
          * @typedef MeaningVector
          */
-        typedef vector<const Meaning*> MeaningVector;
+        typedef QVector<Meaning*> MeaningVector;
 
         /**
          * @brief
          * @typedef RuleList
          */
-        typedef vector<Rule*> RuleVector;
+        typedef QVector<Rule*> RuleVector;
 
         /**
          * @brief
          *
          * @typedef BindingVector
          */
-        typedef vector<Binding*> BindingVector;
+        typedef QVector<Binding*> BindingVector;
 
         /**
          * @brief
@@ -272,18 +272,29 @@ namespace Wintermute {
                 const string locale() const;
                 void setLocale ( const string& = Wintermute::Data::Linguistics::Configuration::locale ());
                 void parse ( const string& );
-                void process ( const string& );
 
             protected:
                 mutable string m_lcl;
 
             private:
+                const Meaning* process ( const string& );
                 StringVector getTokens ( const string& );
+                Node* formNode(const string& );
                 NodeVector formNodes ( StringVector& );
                 NodeTree expandNodes ( NodeVector& );
                 NodeTree expandNodes ( NodeTree& , const int& = 0, const int& = 0 );
                 const Meaning formMeaning ( const NodeVector& );
                 static const string formShorthand ( const NodeVector& , const Node::FormatDensity& = Node::FULL );
+
+            private slots:
+                void generateNode(const Node*);
+
+            signals:
+                void foundPseduoNode(const Node* = NULL);
+                void finishedTextAnalysis();
+                void unwindingProgress(const double & = 0.0 );
+                void finishedUnwinding();
+                void finishedMeaningForming();
         };
 
         /**
@@ -297,8 +308,8 @@ namespace Wintermute {
             Q_PROPERTY(const LinkVector* siblings READ siblings)
 
             public:
-                explicit Meaning(const LinkVector* p_lnkVtr = NULL) : m_lnkVtr(p_lnkVtr) {}
-                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { }
+                explicit Meaning(LinkVector* p_lnkVtr = NULL) : m_lnkVtr(p_lnkVtr) { unique(m_lnkVtr->begin (),m_lnkVtr->end ()); }
+                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { unique(m_lnkVtr->begin (),m_lnkVtr->end ()); }
                 ~Meaning() { }
                 const Link* base() const;
                 const LinkVector* siblings() const;
@@ -311,7 +322,7 @@ namespace Wintermute {
             protected:
 
             private:
-                const LinkVector* m_lnkVtr;
+                LinkVector* m_lnkVtr;
         };
 
     }

@@ -39,6 +39,8 @@ using namespace std;
 
 using std::cout;
 using std::endl;
+using Wintermute::Data::Linguistics::Lexical::SaveModel;
+using Wintermute::Data::Linguistics::Lexical::Storage;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -63,10 +65,7 @@ namespace Wintermute {
 
             const QString l_wh = this->m_ele.attribute ( "with" );
             const QString l_ndStr ( p_nd2.toString ( Node::EXTRA ).c_str () );
-            QStringList l_options;
-
-            if ( l_wh.contains ( "," ) ) l_options = l_wh.split ( "," );
-            else l_options += l_wh;
+            QStringList l_options = l_wh.split ( "," );
 
             for ( QStringList::ConstIterator l_itr = l_options.begin (); l_itr != l_options.end (); l_itr++ ) {
                 const QString l_s = *l_itr;
@@ -77,7 +76,8 @@ namespace Wintermute {
                 if (l_half && !l_full) l_rtn = 0.5;
                 else if ((!l_half && l_full) || (l_half && l_full)) l_rtn = 1.0;
 
-                {
+                if (m_ele.hasAttribute ("typeHas")){
+                    //cout << "(ling) [Binding] Required type!" << endl;
                     const QString l_hasTypeHas ( p_nd.toString ( Node::EXTRA ).c_str () );
                     const QString l_bindType = this->getAttrValue ( "typeHas" );
 
@@ -87,15 +87,18 @@ namespace Wintermute {
                     }
                 }
 
-                cout << "(ling) [Binding] Bond: "<< l_rtn << " for " << p_nd.symbol () << " to " << p_nd2.symbol () << endl;
-                if (l_rtn != 0.0) return l_rtn;
+                if (l_rtn != 0.0) {
+                    //cout << "(ling) [Binding] Bond: "<< l_rtn * 100 << "% for '" << p_nd.symbol () << "' to '" << p_nd2.symbol () << "'" << endl;
+                    return l_rtn;
+                }
             }
 
-            //cout << "(ling) [Binding] Binding failed for %ND2 ->%ND1 : " << p_nd.toString (Node::EXTRA) << " " << qPrintable(l_ndStr) << endl;
+            //cout << "(ling) [Binding] Binding failed for %ND2 -> %ND1 : " << p_nd.toString (Node::EXTRA) << " " << qPrintable(l_ndStr) << endl;
 
             return 0.0;
         }
 
+        /// @note This is where the attribute 'linkAction' is defined.
         const Link* Binding::bind ( const Node& p_nd1, const Node& p_nd2 ) const {
             if (!canBind(p_nd1,p_nd2)) return NULL;
 
@@ -103,18 +106,22 @@ namespace Wintermute {
             string l_lcl = this->parentRule ()->parentRuleSet ()->locale ();
             Node *l_nd = const_cast<Node*> ( &p_nd1 ), *l_nd2 = const_cast<Node*> ( &p_nd2 );
 
-            if ( m_ele.attribute ( "postAction" ).contains ( "reverse" ) ) {
-                l_type = p_nd2.toString ( Node::MINIMAL );
-                l_lcl = p_nd2.locale ();
-                Node *l_tmp = l_nd;
-                l_nd = l_nd2;
-                l_nd2 = l_tmp;
-                //cout << "(ling) [Binding] Reversed the type and locale of the link." << endl;
-            } else if ( m_ele.attribute ( "postAction" ).contains ( "othertype" ) ) {
-                l_type = p_nd2.toString ( Node::MINIMAL );
-            } else if ( m_ele.attribute ( "postAction" ).contains ( "thistype" ) ) {
-                l_type = p_nd1.toString ( Node::MINIMAL );
-            } else {}
+            if (m_ele.hasAttribute ("linkAction")){
+                const QStringList l_eleStr = m_ele.attribute ("linkAction").split (",");
+
+                if (l_eleStr.contains ("reverse")) {
+                    l_type = p_nd2.toString ( Node::MINIMAL );
+                    l_lcl = p_nd2.locale ();
+                    Node *l_tmp = l_nd;
+                    l_nd = l_nd2;
+                    l_nd2 = l_tmp;
+                    //cout << "(ling) [Binding] Reversed the type and locale of the link." << endl;
+                } else if (l_eleStr.contains ("othertype")){
+                    l_type = p_nd2.toString ( Node::MINIMAL );
+                } else if (l_eleStr.contains ("thistype")){
+                    l_type = p_nd1.toString ( Node::MINIMAL );
+                }
+            }
 
             return Link::form ( static_cast<const FlatNode*> ( l_nd ), static_cast<const FlatNode*> ( l_nd2 ), l_type, l_lcl );
         }
@@ -164,13 +171,13 @@ namespace Wintermute {
                 const double l_vl = l_bnd->canBind ( p_nd,p_nd2 );
                 if ( l_vl > 0.0 || l_vl == 1.0 ){
                     l_bndLevel.insert (map<const double,const Binding*>::value_type(l_vl,l_bnd));
-                    cout << "(ling) [Rule] Valid binding for " << p_nd.symbol () << " to " << p_nd2.symbol () << endl;
+                    //cout << "(ling) [Rule] Valid binding for '" << p_nd.symbol () << "' to '" << p_nd2.symbol () << "'" << endl;
                 }
             }
 
             if (!l_bndLevel.empty ()){
                 map<const double,const Binding*>::const_iterator l_itr = l_bndLevel.begin ();
-                return (l_itr->second);
+                return l_itr->second;
             } else return NULL;
         }
 
@@ -185,7 +192,9 @@ namespace Wintermute {
             if ((!l_half && l_full) || (l_half && l_full)) l_rtn = 1.0;
             else if (l_half && !l_full) l_rtn = 0.5;
 
-            cout << "(ling) [Rule] Bond: " << l_rtn << " for " << p_nd.symbol () << endl;
+            if (l_rtn != 0.0) {
+                //cout << "(ling) [Rule] Bond: " << l_rtn * 100 << "% for '" << p_nd.symbol () << "'" << endl;
+            }
 
             return l_rtn;
         }
@@ -205,7 +214,7 @@ namespace Wintermute {
             QFile *l_rlstDoc = new QFile ( QString ( l_dir.c_str () ) );
 
             if (!l_rlstDoc->open ( QIODevice::ReadOnly )){
-                cout << "(ling) [RuleSet] Failed to read data from RuleSet document!" << endl;
+                //cout << "(ling) [RuleSet] Failed to read data from RuleSet document!" << endl;
                 return;
             }
 
@@ -215,7 +224,7 @@ namespace Wintermute {
                 QString l_errorMsg;
                 int l_errorLine, l_errorColumn;
                 if (!m_dom->setContent ( l_rlstDoc , &l_errorMsg, &l_errorLine, &l_errorColumn )){
-                    qDebug () << "(ling) [RuleSet] Failed to load XML data for RuleSet. Error:" << l_errorMsg << "on line" << l_errorLine << "at column" << l_errorColumn;
+                    //qDebug () << "(ling) [RuleSet] Failed to load XML data for RuleSet. Error:" << l_errorMsg << "on line" << l_errorLine << "at column" << l_errorColumn;
                     return;
                 }
             }
@@ -232,7 +241,7 @@ namespace Wintermute {
                     m_rules->push_back ( new Rule ( l_curEle,this ) );
             }
 
-            cout << "(ling) [RuleSet] Loaded " << m_rules->size () << " of " << l_ruleNdLst.count () << " rules." << endl;
+            //cout << "(ling) [RuleSet] Loaded " << m_rules->size () << " of " << l_ruleNdLst.count () << " rules." << endl;
         }
 
         RuleSet* RuleSet::obtain ( const Node& p_ndRef ) {
@@ -255,7 +264,7 @@ namespace Wintermute {
                 const double l_rt = l_rl->appliesFor (p_nd);
                 if ( l_rt > 0.0 || l_rt == 1.0 ){
                     l_rlVtr.insert (map<const double,const Rule*>::value_type(l_rt,l_rl));
-                    cout << "(ling) [RuleSet] Valid rule for " << p_nd.symbol () << endl;
+                    //cout << "(ling) [RuleSet] Valid rule for '" << p_nd.symbol () << "'" << endl;
                 }
             }
 
@@ -315,24 +324,69 @@ namespace Wintermute {
             return l_theTokens;
         }
 
-        /// @todo Wrap the ID obtaining method into a private method by the parser.
+        void Parser::generateNode(const Node* p_nd){
+            cout << "(ling) [Parser] The parser has encountered an unrecognized word. " << endl
+                 << setw(5) << right << setfill(' ')
+                 << "Do you want to add this to the system? [y]/n : ";
+
+            char l_rs;
+            cin >> l_rs;
+
+            if (l_rs == 'y'){
+                Lexidata* l_lxdt = const_cast<Lexidata*>(p_nd->data());
+                cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to quit." << endl;
+                QTextStream l_inStrm(stdin);
+                QString l_oid, l_flg, l_ln = l_inStrm.readLine ();
+                Leximap l_lxmp;
+
+                do {
+                    QStringList l_objs = l_ln.split (" ");
+                    l_oid = l_objs[0];
+                    l_flg = l_objs[1];
+
+                    l_lxmp.insert(Leximap::value_type(l_oid.toStdString (),l_flg.toStdString ()));
+                    l_ln = l_inStrm.readLine ();
+                } while (!l_ln.isNull());
+
+                l_lxdt = new Lexidata(l_lxdt->id (),l_lxdt->locale (), l_lxdt->symbol (), l_lxmp);
+
+                SaveModel* l_svmdl = Storage::obtain (l_lxdt);
+                l_svmdl->save ();
+                p_nd = Node::obtain (*(l_lxdt->locale ()),*(l_lxdt->id ()));
+                qDebug() << "(ling) [Parser] Node generated.";
+            } else {
+                qDebug() << "(ling) [Parser] Node creation cancelled.";
+                p_nd = NULL;
+            }
+        }
+
+        /// @todo Allow a handle to be created here whenever it bumps into a foreign word.
         NodeVector Parser::formNodes ( StringVector& l_tokens ) {
             NodeVector l_theNodes;
+            connect(this,SIGNAL(foundPseduoNode(const Node*)), this,SLOT(generateNode(const Node*)));
 
-            for ( StringVector::const_iterator itr = l_tokens.begin (); itr != l_tokens.end (); ++itr ) {
-                const string l_curToken = *itr, l_theID = md5 ( l_curToken );
-                const Node* l_theNode = Node::obtain ( m_lcl, l_theID );
-                const bool l_ndExsts = Node::exists ( m_lcl, l_theID );
+            for ( StringVector::const_iterator itr = l_tokens.begin (); itr != l_tokens.end (); itr++ )
+                l_theNodes.push_back(formNode(*itr));
 
-                if ( l_ndExsts )
-                    l_theNodes.push_back ( const_cast<Node*>(l_theNode) );
-                else
-                    l_theNodes.push_back ( const_cast<Node*>( Node::buildPseudo ( m_lcl, l_theID, l_curToken ) ) );
-            }
-
+            disconnect(this,SLOT(generateNode(const Node*)));
             return l_theNodes;
         }
 
+        Node* Parser::formNode( const string& p_token ){
+            const string l_theID = md5 ( p_token );
+            Node* l_theNode = const_cast<Node*>(Node::obtain ( m_lcl, l_theID ));
+
+            if ( Node::exists (m_lcl,l_theID) )
+                return l_theNode;
+            else {
+                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl, l_theID, p_token ));
+                emit foundPseduoNode(l_theNode);
+                return l_theNode;
+            }
+
+        }
+
+        /// @todo Find a means of reporting progress from this method; this method can end up becoming extremely time-consuming.
         NodeTree Parser::expandNodes ( NodeTree& p_tree, const int& p_size, const int& p_level ) {
             // Salvaged this method's algorithm from an older version of the parser.
 
@@ -355,49 +409,49 @@ namespace Wintermute {
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
             //cout << "(ling) [Parser] Level " << p_level << " expects " << l_foundStems.size() * l_curBranch.size () << " paths." << endl;
-            for ( NodeVector::const_iterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
+            for ( NodeVector::ConstIterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
                 const Node* l_curLvlNd = * jtr;
 
                 if ( !isAtEnd ) {
                     for ( NodeTree::iterator itr = l_foundStems.begin ( ); itr != l_foundStems.end ( ); itr ++ ) {
-                        NodeVector tmpVector, // creates the current vector (1 of x, x = l_curBranch.size();
-                        theVector = * itr;
-                        tmpVector.push_back ( const_cast<Node*>(l_curLvlNd) );
-                        tmpVector.insert ( tmpVector.end ( ), theVector.begin ( ), theVector.end ( ) );
-                        l_chldBranches.push_back ( tmpVector ); // add this current branch to list.
+                        NodeVector l_tmpVector; // creates the current vector (1 of x, x = l_curBranch.size();
+                        l_tmpVector << (const_cast<Node*>(l_curLvlNd)) << (*itr);
+                        l_chldBranches.push_back ( l_tmpVector ); // add this current branch to list.
                     }
                 } else { // the end of the line!
                     NodeVector tmpVector;
-                    tmpVector.push_back ( const_cast<Node*>(l_curLvlNd) );
+                    tmpVector << (const_cast<Node*>(l_curLvlNd));
                     l_chldBranches.push_back ( tmpVector ); // add this current branch to list.
                 }
             }
 
-            //cout << "(ling) [Parser] Level " << p_level << " generated " << l_chldBranches.size() << " branches." << endl;
+            //qDebug() << "(ling) [Parser] Level" << p_level << "generated" << l_chldBranches.size() << "branches." << endl;
             return l_chldBranches;
         }
 
-        NodeTree Parser::expandNodes ( NodeVector& p_nodVtr ) {
+        NodeTree Parser::expandNodes ( NodeVector& p_ndVtr ) {
             int l_totalPaths = 1;
             NodeTree l_metaTree;
 
-            for ( NodeVector::const_iterator itr = p_nodVtr.begin (); itr != p_nodVtr.end (); itr++ ) {
-                const Node* l_theNode = *itr;
-                const Leximap* l_lxmp = l_theNode->flags();
-                NodeVector l_variations = FlatNode::expand ( l_theNode );
+            for ( NodeVector::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
+                const Node* l_nd = *itr;
+                NodeVector l_variations = FlatNode::expand ( l_nd );
                 const unsigned int size = l_variations.size ();
 
-                if ( itr != p_nodVtr.begin() )
+                if ( itr != p_ndVtr.begin() )
                     l_totalPaths *= size;
 
                 l_metaTree.push_back ( l_variations );
             }
 
-            //cout << "(ling) [Parser] Expanding across " << p_nodVtr.size () << " levels and expecting " << l_totalPaths << " different paths..." << endl;
+            //qDebug() << "(ling) [Parser] Expanding across" << p_ndVtr.size () << "levels and expecting" << l_totalPaths << "different paths..." << endl;
+            emit unwindingProgress(0.0);
             NodeTree l_tree = expandNodes ( l_metaTree , l_totalPaths , 0 );
+            emit unwindingProgress(1.0);
 
-            //cout << "(ling) [Parser] Found " << l_tree.size() << " paths." << endl;
+            //qDebug() << "(ling) [Parser] Found" << l_tree.size() << "path(s)." << endl;
 
+            emit finishedUnwinding();
             return l_tree;
         }
 
@@ -413,13 +467,22 @@ namespace Wintermute {
             return l_ndShrthnd;
         }
 
-        /// @todo Question user to discern which branch is the branch that should be solidified.
+        /// @todo Find a meanings of collecting meanings.
         void Parser::parse ( const string& p_txt ) {
-            process ( p_txt );
+            QTextStream l_strm(p_txt.c_str (),QIODevice::ReadOnly);
+            MeaningVector l_mngVtr;
+
+            while (!l_strm.atEnd ()){
+                QString l_str = l_strm.readLine ();
+                Meaning* l_mng = const_cast<Meaning*>( process ( l_str.toStdString() ) );
+                if (l_mng)
+                    l_mngVtr.push_back (l_mng);
+
+            }
         }
 
         /// @todo Obtain the one meaning that represents the entire parsed text.
-        void Parser::process ( const string& p_txt ) {
+        const Meaning* Parser::process ( const string& p_txt ) {
             StringVector l_tokens = getTokens ( p_txt );
             NodeVector l_theNodes = formNodes ( l_tokens );
             NodeTree l_nodeTree = expandNodes ( l_theNodes );
@@ -427,116 +490,161 @@ namespace Wintermute {
             MeaningVector l_meaningVtr;
             for ( NodeTree::const_iterator itr = l_nodeTree.begin (); itr != l_nodeTree.end (); itr++ ) {
                 const NodeVector l_ndVtr = *itr;
-                //cout << "(ling) [Parser] " << "Forming meaning #" << (l_meaningVtr.size () + 1) << "..." << endl;
-                const Meaning* l_meaning = Meaning::form ( l_ndVtr );
-
-                if ( l_meaning != NULL )
+                //qDebug() << "(ling) [Parser] " << "Forming meaning #" << (l_meaningVtr.size () + 1) << "..." << endl;
+                Meaning* l_meaning = const_cast<Meaning*>(Meaning::form ( l_ndVtr ));
+                if (l_meaning != NULL)
                     l_meaningVtr.push_back ( l_meaning );
             }
 
             unique ( l_meaningVtr.begin(),l_meaningVtr.end () );
-            //cout << "(ling) [Parser] " << l_nodeTree.size () << " paths formed " << l_meaningVtr.size () << " meanings." << endl;
+            //qDebug() << "(ling) [Parser]" << l_nodeTree.size () << "paths formed" << l_meaningVtr.size () << "meanings." << endl;
             //cout << endl << setw(20) << setfill('=') << " " << endl;
 
             for ( MeaningVector::const_iterator itr2 = l_meaningVtr.begin (); itr2 != l_meaningVtr.end (); itr2++ ) {
                 const Meaning* l_mngItr = *itr2;
                 cout << l_mngItr->toText () << endl;
             }
+
+            if (!l_meaningVtr.empty ()) return l_meaningVtr.front ();
+            else return NULL;
         }
 
         const Meaning* Meaning::form ( const LinkVector* p_lnkVtr ) {
-            return new Meaning ( p_lnkVtr );
+            return new Meaning ( const_cast<LinkVector*>(p_lnkVtr) );
         }
 
         /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
         /// @todo If a word fails the test, crash and explain there's a grammatical mistake OR add another rule if under educational mode.
         const Meaning* Meaning::form ( const NodeVector& p_ndVtr, LinkVector* p_lnkVtr ) {
             //cout << endl << setw(20) << setfill('=') << " " << endl;
-            NodeVector::const_iterator l_ndItr = p_ndVtr.begin (), l_ndItrEnd = p_ndVtr.end ();
+            NodeVector::ConstIterator l_ndItr = p_ndVtr.begin ();
             NodeVector l_ndVtr;
-
-            /*cout << "(ling) [Meaning] Current nodes: '";
+            QStringList* l_hideList = NULL;
+            bool l_hideOther = false, l_hideThis = false;
+#if 0
+            qDebug() << "(ling) [Meaning] Current nodes being parsed: '";
             for (int i = 0; i < p_ndVtr.size (); i++)
-                cout << p_ndVtr.at (i).symbol() << " ";
-            cout << "'" << endl;*/
+                qDebug() << p_ndVtr.at (i) << " ";
+            qDebug() << "'" << endl;
+#endif
 
-            QStringList* l_hideFilter = NULL;
-            bool l_hideOther = false;
+            if (p_ndVtr.size () != 1){
+                for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++ ) {
+                    const Node *l_nd, *l_nd2;
+                    if ( p_ndVtr.size () == 2 ) {
+                        l_nd = p_ndVtr.front ();
+                        l_nd2 = p_ndVtr.back ();
+                    } else {
+                        if ( ( l_ndItr + 1 ) != p_ndVtr.end () ) {
+                            l_nd =  ( * ( l_ndItr ) );
+                            l_nd2 = ( * ( l_ndItr + 1 ) );
+                        } else break;
+                    }
 
-            for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++ ) {
-                const Node *l_nd, *l_nd2;
-                if ( p_ndVtr.size () == 2 ) {
-                    l_nd = p_ndVtr.front ();
-                    l_nd2 = p_ndVtr.back ();
-                } else {
-                    if ( ( l_ndItr + 1 ) != p_ndVtr.end () ) {
-                        l_nd =  ( * ( l_ndItr ) );
-                        l_nd2 = ( * ( l_ndItr + 1 ) );
-                    } else break;
+                    if (l_hideList){
+                        const QString l_k(l_nd->toString (Node::EXTRA).c_str ());
+                        bool l_b = false;
+                        foreach (const QString l_s, *l_hideList)
+                            if (l_k.contains (l_s)) l_b = true;
+
+                        if (!l_b) {
+                            //qDebug() << "(ling) [Meaning] *** This node broke the filter; may appear on next round." << endl;
+                            l_hideList = NULL;
+                            l_hideThis = false;
+                        }
+                        else {
+                            l_hideThis = true;
+                            //qDebug() << "(ling) [Meaning] *** Node won't appear in next round due to filter '" << l_hideList->join (",") << "'." << endl;
+                        }
+                    }
+
+                    //qDebug() << "(ling) [Meaning] Current node: " << l_nd << endl;
+                    const Binding* l_bnd = Binding::obtain ( *l_nd,*l_nd2 );
+                    const Link* l_lnk;
+                    if ( l_bnd ) {
+                        l_lnk = l_bnd->bind ( *l_nd,*l_nd2 );
+                        p_lnkVtr->push_back ( const_cast<Link*>(l_lnk) );
+
+                        QString l_hide = l_bnd->getAttrValue("hide");
+                        QString l_hideNext = l_bnd->getAttrValue("hideNext");
+                        QString l_skipWord = l_bnd->getAttrValue("skipWord");
+                        QString l_hideFilter = l_bnd->getAttrValue ("hideFilter");
+
+                        l_hide = (l_hide.isEmpty () || l_hide.isNull ()) ? "no" : l_hide;
+                        l_hideNext = (l_hideNext.isEmpty () || l_hideNext.isNull ()) ? "no" : l_hideNext;
+                        l_skipWord = (l_skipWord.isEmpty () || l_skipWord.isNull ()) ? "yes" : l_skipWord;
+
+                        // Attribute 'hide': Prevents this node (source node) from appearing on the next round of parsing. (default = 'no')
+                        if ( !l_hideThis && !l_hideOther && l_hide == "no" )
+                            l_ndVtr.push_back ( const_cast<Node*>( dynamic_cast<const Node*> ( l_lnk->source () ) ) );
+                        else {
+                            //qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->source () << "' from appearing on the next pass of parsing." << endl;
+                        }
+
+                        // Attribute 'hideNext': Prevents the next node (destination node) from appearing on its next round of parsing (2 rounds from now) (default = 'no')
+                        if ( l_hideNext == "yes" ) {
+                            l_hideOther = true;
+                            //qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->destination () << "' from appearing on the next pass of parsing (2 rounds from now)." << endl;
+                        } else l_hideOther = false;
+
+                        // Attribute 'skipWord': Doesn't allow the destination node to have a chance at being parsed. (default = yes)
+                        if ( l_skipWord == "yes" )
+                            l_ndItr++;
+                        else
+                            qDebug() << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination () << "'; will be parsed on next round." << endl;
+
+
+                        // Attribute 'hideFilter': Hides a set of words from appearing on the next round of parsing; a wrapper for the 'hide' attribute. (default = "")
+                        if ( l_hideFilter.length () != 0 ) {
+                            QStringList *l_e = new QStringList;
+
+                            if ( l_hideFilter.contains ( "," ) ) {
+                                QStringList d = l_hideFilter.split ( "," );
+                                foreach ( const QString q, d )
+                                l_e->append ( q );
+                            } else l_e->append ( l_hideFilter );
+
+                            l_hideList = l_e;
+                            //cout << "(ling) [Meaning] *** Hiding any nodes that falls into the regex '" << qPrintable(l_hideFilter) << "' on the next round." << endl;
+                        }
+#if 0
+                        qDebug() << "(ling) [Meaning] Flags> hide: (" << l_hide
+                             << ") hideThis: ("   << ((l_hideThis == true) ? "yes" : "no")
+                             << ") hideOther: ("  << ((l_hideOther == true) ? "yes" : "no")
+                             << ") hideNext: ("   << l_hideNext
+                             << ") hideFilter: (" << l_hideFilter
+                             << ") skipWord: ("   << l_skipWord
+                             << ") hideList: ("   << ((l_hideList == NULL) ? "NULL" : "*") << ")"
+                             << endl << "Link sig: " << l_lnk->toString ().c_str ()<< endl;
+#endif
+
+                    } else {
+                        //qWarning() << "(ling) [Meaning] Linking failed ... horribly." << endl;
+                        l_lnk = NULL;
+                    }
+#if 0
+                    qDebug() << endl << "(ling) [Meaning] Nodes to be queued:";
+                    for (int i = 0; i < l_ndVtr.size (); i++)
+                        qDebug() << l_ndVtr.at (i);
+                    qDebug() << "'" << endl << endl;
+#endif
+
                 }
-
-                /*if (l_hideFilter){
-                    const QString l_k(l_nd->toString (Node::EXTRA).c_str ());
-                    bool l_b = false;
-                    foreach (const QString l_s, *l_hideFilter)
-                        if (l_k.contains (l_s)) l_b = true;
-
-                    if (!l_b) l_hideFilter = NULL;
-                }*/
-
-                const Binding* l_bnd = Binding::obtain ( *l_nd,*l_nd2 );
-                const Link* l_lnk;
-                if ( l_bnd ) {
-                    l_lnk = l_bnd->bind ( *l_nd,*l_nd2 );
-                    p_lnkVtr->push_back ( l_lnk );
-
-                    if ( l_bnd->getAttrValue ( "hide" ) != "yes" || !l_hideOther )
-                        l_ndVtr.push_back (const_cast<Node*>( dynamic_cast<const Node*> ( l_lnk->source () ) ));
-                    else
-                        cout << "(ling) [Meaning] *** Hid '" << l_lnk->source ()->symbol () << "' from future parsing." << endl;
-
-                    if ( l_bnd->getAttrValue ( "hideOther" ) == "yes" ) {
-                        l_hideOther = true;
-                        cout << "(ling) [Meaning] *** Hid '" << l_lnk->destination ()->symbol () << "' from future parsing on next pass." << endl;
-                    }
-
-                    if ( l_bnd->getAttrValue ( "skipWord" ) != "no" )
-                        l_ndItr++;
-                    else
-                        cout << setw(20) << right << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination ()->symbol () << "'." << endl;
-
-                    if ( l_bnd->getAttrValue ( "hideFilter" ).length () != 0 ) {
-                        const QString l_d = l_bnd->getAttrValue ( "hideFilter" );
-                        QStringList *l_e = new QStringList;
-
-                        if ( l_d.contains ( "," ) ) {
-                            QStringList d = l_d.split ( "," );
-                            foreach ( const QString q, d )
-                            l_e->append ( q );
-                        } else l_e->append ( l_d );
-
-                        l_hideFilter = l_e;
-                    }
-
-                } else l_lnk = NULL;
+                //qDebug() << "(ling) [Meaning] Formed" << p_lnkVtr->size () << "links with" << l_ndVtr.size () << "nodes left to parse." << endl << endl;
             }
 
-            //cout << "(ling) [Meaning] Formed " << p_lnkVtr->size () << " links with " << l_ndVtr.size () << " nodes left to parse." << endl;
-
             if ( !p_lnkVtr->empty () ) {
-                if ( ! ( p_lnkVtr->size () >= 1 && l_ndVtr.size () == 1 ) )
+                if ( ! ( p_lnkVtr->size () >= 1) || l_ndVtr.size () > 0 )
                     return Meaning::form ( l_ndVtr , p_lnkVtr );
-                else {
-                    //cout << "(ling) [Meaning] Crafted a Meaning of " << p_lnkVtr->size () << " link(s)." << endl;
+                else
                     return new Meaning ( p_lnkVtr );
-                }
             } else
                 return NULL;
         }
 
         const Link* Meaning::base () const {
             if (m_lnkVtr == NULL) return NULL;
-            return m_lnkVtr->front ();
+            return m_lnkVtr->back ();
         }
         const LinkVector* Meaning::siblings () const {
             return m_lnkVtr;
@@ -548,7 +656,7 @@ namespace Wintermute {
             for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
                 const Link* l_lnk = *i;
                 if (l_lnk->source () == &p_nd)
-                    l_lnkVtr->push_back (l_lnk);
+                    l_lnkVtr->push_back (const_cast<Link*>(l_lnk));
             }
 
             if (l_lnkVtr->size () == 0) return NULL;
@@ -561,7 +669,7 @@ namespace Wintermute {
             for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
                 const Link* l_lnk = *i;
                 if (l_lnk->destination () == &p_nd)
-                    l_lnkVtr->push_back (l_lnk);
+                    l_lnkVtr->push_back (const_cast<Link*>(l_lnk));
             }
 
             if (l_lnkVtr->size () == 0) return NULL;
@@ -574,8 +682,8 @@ namespace Wintermute {
 
             for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
                 const Link* l_lnk = *i;
-                cout << "(ling) [Meaning] " << l_lnk->source ()->symbol () << " (" << l_lnk->source ()->toString ( Node::EXTRA ) << ") -> "
-                     << l_lnk->destination ()->symbol () << " (" << l_lnk->destination ()->toString ( Node::EXTRA ) << ")" << endl;
+                cout << "(ling) [Meaning] " << l_lnk->source () << ") -> "
+                     << l_lnk->destination () << endl;
             }
 
             cout << "(ling) [Meaning] Primary link: " << l_lnk->source ()->symbol () << " (" << l_lnk->source ()->toString ( Node::EXTRA ) << ") -> "

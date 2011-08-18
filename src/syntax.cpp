@@ -21,49 +21,36 @@
  */
 
 #include "syntax.hpp"
+#include <exception>
+#include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
 
 using namespace boost;
 
 using boost::tokenizer;
+using Wintermute::Data::Linguistics::Lexical::LoadModel;
+using Wintermute::Data::Linguistics::Lexical::SaveModel;
+using Wintermute::Data::Linguistics::Lexical::Storage;
 
 namespace Wintermute {
     namespace Linguistics {
-        Node::Node() : m_lxdt ( NULL ) { }
-
-        Node::Node ( Lexidata* p_lxdt ) : m_lxdt ( p_lxdt ) {}
-
-        const string Node::id () const {
-            return m_lxdt->id();
-        }
-
-        const string Node::locale() const {
-            return m_lxdt->locale();
-        }
-
-        const string Node::symbol() const {
-            return m_lxdt->symbol ();
-        }
-
-        const Leximap* Node::flags() const {
-            return m_lxdt->flags ();
-        }
 
         const string Node::toString ( const FormatDensity& p_density ) const {
-            Leximap::const_iterator l_ndFlg = flags ()->begin();
+            Leximap::const_iterator l_flgItr = m_lxdt.flags ().begin ();
             string sig;
             switch ( p_density ) {
             case MINIMAL:
-                sig = ( *l_ndFlg ).second.at ( 0 );
+                sig = (*l_flgItr).first.at ( 0 );
                 break;
 
             case EXTRA:
-                sig = ( *l_ndFlg ).second;
+                sig = (*l_flgItr).second;
                 break;
 
             default:
             case FULL:
-                sig = ( *l_ndFlg ).second + string ( "[" ) + ( *l_ndFlg ).first + string ( "]" );
+                sig = (*l_flgItr).second + string ( "[" ) +
+                      (*l_flgItr).first + string ( "]" );
                 break;
             }
 
@@ -85,76 +72,80 @@ namespace Wintermute {
             }
         }
 
+        const Node* Node::create( const Lexidata* p_lxdt ){
+            SaveModel* l_svmdl = Storage::obtain (p_lxdt);
+            l_svmdl->save ();
+            return Node::obtain (*(p_lxdt->locale ()),*(p_lxdt->id ()));
+        }
+
+        /// @bug Something funky is happening here.
         const Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
-            Lexidata* l_lexdata = new Lexidata( p_id , p_lcl );
+            Lexidata* l_lexdata = new Lexidata( &p_id , &p_lcl );
 
             if ( exists ( p_lcl , p_id ) ) {
-                LocalStorage* l_strg = dynamic_cast<LocalStorage*> ( LocalStorage::obtain ( l_lexdata ) );
-                l_strg->load ();
-                Lexidata* l_datum = l_strg->LocalLoadModel::lexicalData ();
-                return new Node ( l_datum );
+                LoadModel* l_ldmdl = Storage::obtain(l_lexdata);
+                Lexidata* l_lxdt = l_ldmdl->load ();
+                return new Node ( *l_lxdt );
             } else
                 return NULL;
         }
 
-        const Node* Node::buildPseudo ( const string& p_lcl, const string& p_id, const string& p_sym ) {
+        const Node* Node::buildPseudo ( const string& p_id, const string& p_lcl, const string& p_sym ) {
             Leximap l_map;
-            l_map.insert ( Leximap::value_type ( "-1", "Bz" ) );
-            return new Node ( ( new Lexidata ( p_id, p_lcl, p_sym, l_map ) ) );
+            l_map.insert ( Leximap::value_type("-1", "Bz" ) );
+            return new Node ( ( Lexidata ( &p_id, &p_lcl, &p_sym, l_map ) ) );
         }
 
         const bool Node::exists ( const string& p_lcl, const string& p_id ) {
-            return Storage::exists ( (new Lexidata( p_id , p_lcl )) );
+            return Storage::exists ( ( new Lexidata( &p_id , &p_lcl ) ) );
         }
-
-        Node::~Node () {}
 
         FlatNode::FlatNode() : Node() { }
 
-        FlatNode::FlatNode ( const string& m_id, const string& m_lcl, const string& m_sym, const StringCollection::value_type& m_pair ) {
+        FlatNode::FlatNode ( const string& m_id, const string& m_lcl, const string& m_sym, const Leximap::value_type& m_pair ) {
             Leximap l_map;
-            l_map.insert ( m_pair );
-            ::Node ( ( new Lexidata ( m_id , m_lcl , m_sym , l_map ) ) );
+            l_map.insert(m_pair);
+            ::Node ( ( new Lexidata ( &m_id , &m_lcl , &m_sym , l_map ) ) );
         }
 
         /// @todo Actually add the approriate flag by the specified index.
         FlatNode::FlatNode ( const Node* p_nod, const int& p_indx ) {
-            Leximap l_map;
-            l_map.insert ( * ( p_nod->flags()->begin ()) );
+            Leximap l_map = p_nod->flags ();
+            Leximap::const_iterator itr = l_map.begin ();
+            //for (int i = 0; i < p_indx; i++){ itr++ }
+            l_map.insert ( Leximap::value_type((*itr).first, (*itr).second) );
             ::Node ( ( new Lexidata ( p_nod->id(),
                                       p_nod->locale(),
                                       p_nod->symbol(),
                                       l_map ) ) );
         }
 
-        const FlatNode* FlatNode::form ( const string& m_id, const string& m_lcl, const string& m_sym, const StringCollection::value_type& m_pair ) {
+        const FlatNode* FlatNode::form ( const string& m_id, const string& m_lcl, const string& m_sym, const Leximap::value_type& m_pair ) {
             return new FlatNode ( m_id , m_lcl , m_sym , m_pair );
         }
 
-        const FlatNode* FlatNode::form ( const Node* p_nod, const int& p_indx ) {
-            return new FlatNode ( p_nod,p_indx );
+        const FlatNode* FlatNode::form ( const Node* p_nd, const int& p_indx ) {
+            return new FlatNode ( p_nd,p_indx );
         }
 
-        NodeVector FlatNode::expand ( const Node* p_nod ) {
+        NodeVector FlatNode::expand ( const Node* p_nd ) {
             NodeVector l_vtr;
-            const Leximap* l_map = p_nod->flags ();
+            Leximap l_map;
+            int l_indx = 0;
 
-            for ( Leximap::const_iterator itr = l_map->begin (); itr != l_map->end (); itr++ ) {
-                Leximap l_lxmp;
-                l_lxmp.insert ( *itr );
-                //cout << "(ling) [FlatNode] " << (*itr).first << " " << (*itr).second << endl;
-                Lexidata* l_lxdt = new Lexidata ( p_nod->id (), p_nod->locale (), p_nod->symbol (), l_lxmp );
-                l_vtr.push_back ( (new Node(l_lxdt)) );
-            }
+            l_map = p_nd->flags ();
 
-            //cout << "(ling) [FlatNode] Expanded symbol '" << p_nod.symbol () << "' to spread across its " << l_map->size() << " variations." << endl;
+            for ( Leximap::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ )
+                l_vtr.push_back ( const_cast<FlatNode*>(FlatNode::form(p_nd->id (),p_nd->locale (),p_nd->symbol (),*itr)) );
+
+            //qDebug() << "(ling) [FlatNode] Expanded symbol" << p_nd->symbol ().c_str () << "to spread across its" << l_map.size() << "variations.";
 
             return l_vtr;
         }
 
         const char FlatNode::type() const {
-            const Leximap::const_iterator itr = m_lxdt->flags ()->begin ();
-            return ( ( *itr ).second ) [0];
+            const Leximap::const_iterator itr = m_lxdt.flags ().begin ();
+            return (*itr).second [0];
         }
 
         FlatNode::~FlatNode() { }
@@ -214,6 +205,21 @@ namespace Wintermute {
                               static_cast<const FlatNode*> ( Node::obtain ( lcl,node2_id ) ),
                               flags,lcl );
         }
+
+        QDebug operator<<(QDebug dbg, const NodeVector &p_ndVtr) {
+            foreach(const Node* p_nd, p_ndVtr)
+               dbg.space () << p_nd << ",";
+
+             return dbg.space();
+        }
+
+        QDebug operator<<(QDebug dbg, const LinkVector &p_lnkVtr){
+            foreach(const Link* p_lnk, p_lnkVtr)
+                dbg.space () << p_lnk;
+
+            return dbg.space ();
+        }
+
     }
 }
 // kate: indent-mode cstyle; space-indent on; indent-width 4;
