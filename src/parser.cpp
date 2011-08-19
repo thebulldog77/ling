@@ -123,7 +123,7 @@ namespace Wintermute {
                 }
             }
 
-            return Link::form ( static_cast<const FlatNode*> ( l_nd ), static_cast<const FlatNode*> ( l_nd2 ), l_type, l_lcl );
+            return Link::form ( l_nd, l_nd2 , l_type, l_lcl );
         }
 
         const Rule* Binding::parentRule () const {
@@ -324,51 +324,52 @@ namespace Wintermute {
             return l_theTokens;
         }
 
-        void Parser::generateNode(const Node* p_nd){
-            cout << "(ling) [Parser] The parser has encountered an unrecognized word. " << endl
+        void Parser::generateNode(Node* p_nd){
+            cout << "(ling) [Parser] Encountered unrecognizable word (" << p_nd->symbol () << "). " << endl
                  << setw(5) << right << setfill(' ')
-                 << "Do you want to add this to the system? [y]/n : ";
+                 << "Add to system? ( yes / [n]o): ";
 
-            char l_rs;
-            cin >> l_rs;
+            QTextStream l_iStrm(stdin);
 
-            if (l_rs == 'y'){
+            if (l_iStrm.readLine () == "yes"){
                 Lexidata* l_lxdt = const_cast<Lexidata*>(p_nd->data());
                 cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to quit." << endl;
-                QTextStream l_inStrm(stdin);
-                QString l_oid, l_flg, l_ln = l_inStrm.readLine ();
+                QString l_oid, l_flg, l_ln = l_iStrm.readLine ();
                 Leximap l_lxmp;
 
-                do {
+                while (!l_ln.isNull() && !l_ln.isEmpty ()) {
+                    qDebug() << l_ln;
                     QStringList l_objs = l_ln.split (" ");
                     l_oid = l_objs[0];
                     l_flg = l_objs[1];
 
                     l_lxmp.insert(Leximap::value_type(l_oid.toStdString (),l_flg.toStdString ()));
-                    l_ln = l_inStrm.readLine ();
-                } while (!l_ln.isNull());
+                    l_ln = l_iStrm.readLine ();
+                }
 
                 l_lxdt = new Lexidata(l_lxdt->id (),l_lxdt->locale (), l_lxdt->symbol (), l_lxmp);
 
                 SaveModel* l_svmdl = Storage::obtain (l_lxdt);
                 l_svmdl->save ();
-                p_nd = Node::obtain (*(l_lxdt->locale ()),*(l_lxdt->id ()));
+                p_nd = const_cast<Node*>(Node::obtain (*(l_lxdt->locale ()),*(l_lxdt->id ())));
                 qDebug() << "(ling) [Parser] Node generated.";
             } else {
                 qDebug() << "(ling) [Parser] Node creation cancelled.";
                 p_nd = NULL;
             }
+
+
         }
 
         /// @todo Allow a handle to be created here whenever it bumps into a foreign word.
         NodeVector Parser::formNodes ( StringVector& l_tokens ) {
             NodeVector l_theNodes;
-            connect(this,SIGNAL(foundPseduoNode(const Node*)), this,SLOT(generateNode(const Node*)));
+            connect(this,SIGNAL(foundPseduoNode(Node*)), this,SLOT(generateNode(Node*)));
 
             for ( StringVector::const_iterator itr = l_tokens.begin (); itr != l_tokens.end (); itr++ )
                 l_theNodes.push_back(formNode(*itr));
 
-            disconnect(this,SLOT(generateNode(const Node*)));
+            disconnect(this,SLOT(generateNode(Node*)));
             return l_theNodes;
         }
 
@@ -379,7 +380,7 @@ namespace Wintermute {
             if ( Node::exists (m_lcl,l_theID) )
                 return l_theNode;
             else {
-                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl, l_theID, p_token ));
+                l_theNode = const_cast<Node*>(Node::buildPseudo ( l_theID, m_lcl , p_token ));
                 emit foundPseduoNode(l_theNode);
                 return l_theNode;
             }
@@ -435,7 +436,7 @@ namespace Wintermute {
 
             for ( NodeVector::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
                 const Node* l_nd = *itr;
-                NodeVector l_variations = FlatNode::expand ( l_nd );
+                NodeVector l_variations = Node::expand ( l_nd );
                 const unsigned int size = l_variations.size ();
 
                 if ( itr != p_ndVtr.begin() )
@@ -456,11 +457,11 @@ namespace Wintermute {
         }
 
         /// @todo Determine a means of generating unique signatures.
-        const string Parser::formShorthand ( const NodeVector& p_ndVtr, const Node::FormatDensity& p_sigVerb ) {
+        const string Parser::formShorthand ( const NodeVector& p_ndVtr, const Node::FormatVerbosity& p_sigVerb ) {
             string l_ndShrthnd;
 
             for ( NodeVector::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); ++itr ) {
-                const FlatNode* l_nd = dynamic_cast<const FlatNode*>(*itr);
+                const Node* l_nd = *itr;
                 l_ndShrthnd += l_nd->toString ( p_sigVerb );
             }
 
@@ -510,7 +511,7 @@ namespace Wintermute {
         }
 
         const Meaning* Meaning::form ( const LinkVector* p_lnkVtr ) {
-            return new Meaning ( const_cast<LinkVector*>(p_lnkVtr) );
+            return new Meaning ( *p_lnkVtr );
         }
 
         /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
@@ -590,8 +591,9 @@ namespace Wintermute {
                         // Attribute 'skipWord': Doesn't allow the destination node to have a chance at being parsed. (default = yes)
                         if ( l_skipWord == "yes" )
                             l_ndItr++;
-                        else
-                            qDebug() << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination () << "'; will be parsed on next round." << endl;
+                        else {
+                            //qDebug() << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination () << "'; will be parsed on next round." << endl;
+                        }
 
 
                         // Attribute 'hideFilter': Hides a set of words from appearing on the next round of parsing; a wrapper for the 'hide' attribute. (default = "")
@@ -637,57 +639,50 @@ namespace Wintermute {
                 if ( ! ( p_lnkVtr->size () >= 1) || l_ndVtr.size () > 0 )
                     return Meaning::form ( l_ndVtr , p_lnkVtr );
                 else
-                    return new Meaning ( p_lnkVtr );
+                    return new Meaning ( *p_lnkVtr );
             } else
                 return NULL;
         }
 
-        const Link* Meaning::base () const {
-            if (m_lnkVtr == NULL) return NULL;
-            return m_lnkVtr->back ();
-        }
-        const LinkVector* Meaning::siblings () const {
-            return m_lnkVtr;
+        void Meaning::__init(){
+            unique(m_lnkVtr.begin (),m_lnkVtr.end ());
+            m_ontoMap.clear();
+
+            foreach (Link* l_lnk, m_lnkVtr){
+                Node* l_nd = const_cast<Node*>(l_lnk->source ());
+                m_ontoMap.insert(l_nd,l_lnk);
+            }
+
+            qDebug() << "(ling) [Meaning] Encapsulates" << m_ontoMap.size() << "words.";
         }
 
-        const LinkVector* Meaning::isLinkedTo(const Node& p_nd) const {
-            LinkVector* l_lnkVtr = new LinkVector;
+        const LinkVector Meaning::isLinkedTo(const Node& p_nd) const {
+            LinkVector l_lnkVtr;
 
-            for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
-                const Link* l_lnk = *i;
+            foreach (Link* l_lnk, m_lnkVtr){
                 if (l_lnk->source () == &p_nd)
-                    l_lnkVtr->push_back (const_cast<Link*>(l_lnk));
+                    l_lnkVtr << l_lnk;
             }
 
-            if (l_lnkVtr->size () == 0) return NULL;
-            else return l_lnkVtr;
+            return l_lnkVtr;
         }
 
-        const LinkVector* Meaning::isLinkedBy(const Node& p_nd) const {
-            LinkVector* l_lnkVtr = new LinkVector;
+        const LinkVector Meaning::isLinkedBy(const Node& p_nd) const {
+            LinkVector l_lnkVtr;
 
-            for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
-                const Link* l_lnk = *i;
+            foreach (Link* l_lnk, m_lnkVtr){
                 if (l_lnk->destination () == &p_nd)
-                    l_lnkVtr->push_back (const_cast<Link*>(l_lnk));
+                    l_lnkVtr << l_lnk;
             }
 
-            if (l_lnkVtr->size () == 0) return NULL;
-            else return l_lnkVtr;
+            return l_lnkVtr;
         }
 
         const string Meaning::toText () const {
-            const Link* l_lnk = m_lnkVtr->front ();
-            cout << "(ling) [Meaning] This Meaning encapsulates " << m_lnkVtr->size () << " link(s)." << endl;
+            qDebug() << "(ling) [Meaning] Has" << m_lnkVtr.size () << "link(s).";
 
-            for ( LinkVector::const_iterator i = m_lnkVtr->begin (); i != m_lnkVtr->end (); i++ ) {
-                const Link* l_lnk = *i;
-                cout << "(ling) [Meaning] " << l_lnk->source () << ") -> "
-                     << l_lnk->destination () << endl;
-            }
-
-            cout << "(ling) [Meaning] Primary link: " << l_lnk->source ()->symbol () << " (" << l_lnk->source ()->toString ( Node::EXTRA ) << ") -> "
-                 << l_lnk->destination ()->symbol () << " (" << l_lnk->destination ()->toString ( Node::EXTRA ) << ")" << endl;
+            foreach (const Link* l_lnk, m_lnkVtr)
+                qDebug() << "(ling) [Meaning]" << l_lnk;
 
             return " ";
         }

@@ -78,6 +78,12 @@ namespace Wintermute {
         typedef map<const string, RuleSet*> RuleSetMap;
 
         /**
+         * @brief
+         * @typedef OntoMap
+         */
+        typedef QMultiMap<Node*,Link*> OntoMap;
+
+        /**
          * @brief Represents the potential connection of words by a specified rule as defined by its parent rule.
          * @class Binding parser.hpp "include/wntr/ling/parser.hpp"
          */
@@ -85,10 +91,27 @@ namespace Wintermute {
             Q_OBJECT
             friend class Rule;
             public:
+                /**
+                 * @brief
+                 * @fn Binding
+                 */
                 explicit Binding() : m_rl(NULL) { }
+                /**
+                 * @brief
+                 * @fn Binding
+                 * @param p_bnd
+                 */
                 Binding(const Binding& p_bnd) : m_rl(p_bnd.m_rl), m_ele(p_bnd.m_ele) { }
+                /**
+                 * @brief
+                 * @fn ~Binding
+                 */
                 ~Binding() { }
                 static const Binding* obtain ( const Node&, const Node& );
+                /**
+                 * @brief
+                 * @fn parentRule
+                 */
                 const Rule* parentRule() const;
                 /**
                  * @brief The ability of binding is measured on a scale from 0.0 to 1.0; where 0.0 is no chance at all and 1.0 is equality.
@@ -97,10 +120,27 @@ namespace Wintermute {
                  * @param
                  */
                 const double canBind ( const Node&, const Node& ) const;
+                /**
+                 * @brief
+                 * @fn getAttrValue
+                 * @param
+                 */
                 const QString getAttrValue ( const QString& ) const;
+                /**
+                 * @brief
+                 * @fn bind
+                 * @param
+                 * @param
+                 */
                 const Link* bind ( const Node&, const Node& ) const;
 
             protected:
+                /**
+                 * @brief
+                 * @fn Binding
+                 * @param QDomElement
+                 * @param
+                 */
                 Binding ( QDomElement , const Rule* );
 
             private:
@@ -236,12 +276,32 @@ namespace Wintermute {
                  */
                 const string locale() const;
 
+                /**
+                 * @brief
+                 * @fn setLocale
+                 * @param
+                 */
                 void setLocale(const string& = Wintermute::Data::Linguistics::Configuration::locale ());
 
+                /**
+                 * @brief
+                 * @fn RuleSet
+                 * @param p_lcl
+                 */
                 explicit RuleSet ( const string& p_lcl = Wintermute::Data::Linguistics::Configuration::locale ()  ) : m_dom((new QDomDocument)),
                     m_rules((new RuleVector)) { __init(p_lcl); }
 
+                /**
+                 * @brief
+                 * @fn RuleSet
+                 * @param p_rlst
+                 */
                 RuleSet(const RuleSet& p_rlst) : m_dom(p_rlst.m_dom), m_rules(p_rlst.m_rules) { }
+
+                /**
+                 * @brief
+                 * @fn ~RuleSet
+                 */
                 ~RuleSet() { }
 
             private:
@@ -266,34 +326,132 @@ namespace Wintermute {
             Q_PROPERTY(string locale READ locale WRITE setLocale)
 
             public:
+                /**
+                 * @brief
+                 * @fn Parser
+                 * @param p_prsr
+                 */
                 explicit Parser( const Parser& p_prsr ) : m_lcl(p_prsr.m_lcl) {}
+
+                /**
+                 * @brief
+                 * @fn Parser
+                 * @param
+                 */
                 Parser ( const string& = Wintermute::Data::Linguistics::Configuration::locale ()  );
+
+                /**
+                 * @brief
+                 * @fn ~Parser
+                 */
                 ~Parser() { }
+
+                /**
+                 * @brief
+                 * @fn locale
+                 */
                 const string locale() const;
+
+                /**
+                 * @brief
+                 * @fn setLocale
+                 * @param
+                 */
                 void setLocale ( const string& = Wintermute::Data::Linguistics::Configuration::locale ());
+
+                /**
+                 * @brief
+                 * @fn parse
+                 * @param
+                 */
                 void parse ( const string& );
 
             protected:
                 mutable string m_lcl;
 
             private:
+                /**
+                 * @brief
+                 * @fn process
+                 * @param
+                 */
                 const Meaning* process ( const string& );
+                /**
+                 * @brief
+                 * @fn getTokens
+                 * @param
+                 */
                 StringVector getTokens ( const string& );
+                /**
+                 * @brief
+                 * @fn formNode
+                 * @param
+                 */
                 Node* formNode(const string& );
+                /**
+                 * @brief
+                 * @fn formNodes
+                 * @param
+                 */
                 NodeVector formNodes ( StringVector& );
+                /**
+                 * @brief
+                 * @fn expandNodes
+                 * @param
+                 */
                 NodeTree expandNodes ( NodeVector& );
+                /**
+                 * @brief
+                 * @fn expandNodes
+                 * @param
+                 * @param
+                 * @param
+                 */
                 NodeTree expandNodes ( NodeTree& , const int& = 0, const int& = 0 );
+                /**
+                 * @brief
+                 * @fn formMeaning
+                 * @param
+                 */
                 const Meaning formMeaning ( const NodeVector& );
-                static const string formShorthand ( const NodeVector& , const Node::FormatDensity& = Node::FULL );
+                /**
+                 * @brief
+                 * @fn formShorthand
+                 * @param
+                 * @param
+                 */
+                static const string formShorthand ( const NodeVector& , const Node::FormatVerbosity& = Node::FULL );
 
             private slots:
-                void generateNode(const Node*);
+                void generateNode(Node*);
 
             signals:
-                void foundPseduoNode(const Node* = NULL);
+                /**
+                 * @brief
+                 * @fn foundPseduoNode
+                 * @param
+                 */
+                void foundPseduoNode(Node* = NULL);
+                /**
+                 * @brief
+                 * @fn finishedTextAnalysis
+                 */
                 void finishedTextAnalysis();
+                /**
+                 * @brief
+                 * @fn unwindingProgress
+                 * @param
+                 */
                 void unwindingProgress(const double & = 0.0 );
+                /**
+                 * @brief
+                 * @fn finishedUnwinding
+                 */
                 void finishedUnwinding();
+                /**
+                 * @brief
+                 * @fn finishedMeaningForming
+                 */
                 void finishedMeaningForming();
         };
 
@@ -308,21 +466,80 @@ namespace Wintermute {
             Q_PROPERTY(const LinkVector* siblings READ siblings)
 
             public:
-                explicit Meaning(LinkVector* p_lnkVtr = NULL) : m_lnkVtr(p_lnkVtr) { unique(m_lnkVtr->begin (),m_lnkVtr->end ()); }
-                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { unique(m_lnkVtr->begin (),m_lnkVtr->end ()); }
+                /**
+                 * @brief
+                 * @fn Meaning
+                 * @param p_lnkVtr
+                 */
+                explicit Meaning(const LinkVector& p_lnkVtr = LinkVector()) : m_lnkVtr(p_lnkVtr) { __init(); }
+
+                /**
+                 * @brief
+                 * @fn Meaning
+                 * @param p_mng
+                 */
+                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { __init(); }
+
+                /**
+                 * @brief
+                 * @fn ~Meaning
+                 */
                 ~Meaning() { }
-                const Link* base() const;
-                const LinkVector* siblings() const;
+
+                /**
+                 * @brief
+                 * @fn base
+                 */
+                Q_INVOKABLE inline const Link* base() const { return m_lnkVtr.front (); }
+
+                /**
+                 * @brief
+                 * @fn siblings
+                 * @return const LinkVector *
+                 */
+                Q_INVOKABLE inline const LinkVector* siblings() const { return &m_lnkVtr; }
+
+                /**
+                 * @brief
+                 * @fn toText
+                 */
                 const string toText() const;
-                const LinkVector* isLinkedTo(const Node& ) const;
-                const LinkVector* isLinkedBy(const Node& ) const;
+
+                /**
+                 * @brief
+                 * @fn isLinkedTo
+                 * @param
+                 */
+                const LinkVector isLinkedTo(const Node& ) const;
+
+                /**
+                 * @brief
+                 * @fn isLinkedBy
+                 * @param
+                 */
+                const LinkVector isLinkedBy(const Node& ) const;
+
+                /**
+                 * @brief
+                 * @fn form
+                 * @param
+                 * @param
+                 */
                 static const Meaning* form ( const NodeVector& , LinkVector* = new LinkVector );
+
+                /**
+                 * @brief
+                 * @fn form
+                 * @param
+                 */
                 static const Meaning* form ( const LinkVector* = NULL );
 
             protected:
+                LinkVector m_lnkVtr;
+                OntoMap m_ontoMap;
 
             private:
-                LinkVector* m_lnkVtr;
+                void __init();
         };
 
     }

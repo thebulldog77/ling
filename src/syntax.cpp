@@ -35,12 +35,12 @@ using Wintermute::Data::Linguistics::Lexical::Storage;
 namespace Wintermute {
     namespace Linguistics {
 
-        const string Node::toString ( const FormatDensity& p_density ) const {
+        const string Node::toString ( const Node::FormatVerbosity& p_density ) const {
             Leximap::const_iterator l_flgItr = m_lxdt.flags ().begin ();
             string sig;
             switch ( p_density ) {
             case MINIMAL:
-                sig = (*l_flgItr).first.at ( 0 );
+                sig = (*l_flgItr).first.at(0);
                 break;
 
             case EXTRA:
@@ -57,11 +57,11 @@ namespace Wintermute {
             return sig;
         }
 
-        const string Node::toString ( const Node* p_nd, const FormatDensity& p_density ) {
+        const string Node::toString ( const Node* p_nd, const FormatVerbosity& p_density ) {
             return p_nd->toString ( p_density );
         }
 
-        const string Node::toString ( const NodeVector& p_ndVtr, const FormatDensity& p_density ) {
+        const string Node::toString ( const NodeVector& p_ndVtr, const FormatVerbosity& p_density ) {
             string sig;
 
             for ( NodeVector::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
@@ -100,35 +100,24 @@ namespace Wintermute {
             return Storage::exists ( ( new Lexidata( &p_id , &p_lcl ) ) );
         }
 
-        FlatNode::FlatNode() : Node() { }
-
-        FlatNode::FlatNode ( const string& m_id, const string& m_lcl, const string& m_sym, const Leximap::value_type& m_pair ) {
+        const Node* Node::form ( const string& m_id, const string& m_lcl, const string& m_sym, const Leximap::value_type& m_pair ) {
             Leximap l_map;
             l_map.insert(m_pair);
-            ::Node ( ( new Lexidata ( &m_id , &m_lcl , &m_sym , l_map ) ) );
+            return new Node ( ( Lexidata(&m_id , &m_lcl , &m_sym , l_map) ) );
         }
 
-        /// @todo Actually add the approriate flag by the specified index.
-        FlatNode::FlatNode ( const Node* p_nod, const int& p_indx ) {
-            Leximap l_map = p_nod->flags ();
+        const Node* Node::form ( const Node* p_nd, const int& p_indx ) {
+            Leximap l_map = p_nd->flags ();
             Leximap::const_iterator itr = l_map.begin ();
-            //for (int i = 0; i < p_indx; i++){ itr++ }
+            for (int i = 0; i < p_indx; i++){ itr++; }
             l_map.insert ( Leximap::value_type((*itr).first, (*itr).second) );
-            ::Node ( ( new Lexidata ( p_nod->id(),
-                                      p_nod->locale(),
-                                      p_nod->symbol(),
+            return new Node ( ( Lexidata ( p_nd->id(),
+                                      p_nd->locale(),
+                                      p_nd->symbol(),
                                       l_map ) ) );
         }
 
-        const FlatNode* FlatNode::form ( const string& m_id, const string& m_lcl, const string& m_sym, const Leximap::value_type& m_pair ) {
-            return new FlatNode ( m_id , m_lcl , m_sym , m_pair );
-        }
-
-        const FlatNode* FlatNode::form ( const Node* p_nd, const int& p_indx ) {
-            return new FlatNode ( p_nd,p_indx );
-        }
-
-        NodeVector FlatNode::expand ( const Node* p_nd ) {
+        NodeVector Node::expand ( const Node* p_nd ) {
             NodeVector l_vtr;
             Leximap l_map;
             int l_indx = 0;
@@ -136,39 +125,11 @@ namespace Wintermute {
             l_map = p_nd->flags ();
 
             for ( Leximap::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ )
-                l_vtr.push_back ( const_cast<FlatNode*>(FlatNode::form(p_nd->id (),p_nd->locale (),p_nd->symbol (),*itr)) );
+                l_vtr.push_back ( const_cast<Node*>(Node::form(p_nd->id (),p_nd->locale (),p_nd->symbol (),*itr)) );
 
-            //qDebug() << "(ling) [FlatNode] Expanded symbol" << p_nd->symbol ().c_str () << "to spread across its" << l_map.size() << "variations.";
+            //qDebug() << "(ling) [Node] Expanded symbol" << p_nd->symbol ().c_str () << "to spread across its" << l_map.size() << "variations.";
 
             return l_vtr;
-        }
-
-        const char FlatNode::type() const {
-            const Leximap::const_iterator itr = m_lxdt.flags ().begin ();
-            return (*itr).second [0];
-        }
-
-        FlatNode::~FlatNode() { }
-
-        Link::Link() : m_flgs ( string() ) { }
-
-        Link::Link ( const FlatNode* p_src, const FlatNode* p_dst, const string& p_flgs, const string& p_lcl ) : m_src ( p_src ),
-                m_dst ( p_dst ), m_flgs ( p_flgs ), m_lcl ( p_lcl ) { }
-
-        const FlatNode* Link::source() const {
-            return m_src;
-        }
-
-        const FlatNode* Link::destination() const {
-            return m_dst;
-        }
-
-        const string Link::flags () const {
-            return m_flgs;
-        }
-
-        const string Link::locale() const {
-            return m_lcl;
         }
 
         const string Link::toString() const {
@@ -178,7 +139,7 @@ namespace Wintermute {
                    m_lcl;
         }
 
-        const Link* Link::form ( const FlatNode * p_src, const FlatNode * p_dst, const string & p_flgs, const string & p_lcl ) {
+        const Link* Link::form ( const Node * p_src, const Node * p_dst, const string & p_flgs, const string & p_lcl ) {
             return new Link ( p_src , p_dst , p_flgs , p_lcl );
         }
 
@@ -201,25 +162,20 @@ namespace Wintermute {
             Tokenizer toks3 ( node2,l_scndLvl );
             const string node2_id = * ( ++ ( toks3.begin() ) );
 
-            return new Link ( static_cast<const FlatNode*> ( Node::obtain ( lcl,node1_id ) ),
-                              static_cast<const FlatNode*> ( Node::obtain ( lcl,node2_id ) ),
-                              flags,lcl );
+            return new Link ( Node::obtain ( lcl,node1_id ), Node::obtain ( lcl,node2_id ),
+                              flags, lcl );
         }
 
-        QDebug operator<<(QDebug dbg, const NodeVector &p_ndVtr) {
-            foreach(const Node* p_nd, p_ndVtr)
-               dbg.space () << p_nd << ",";
-
+        QDebug operator<<(QDebug dbg, const Node* p_nd) {
+             dbg.nospace () << "[" << p_nd->symbol ().c_str () << " (" << p_nd->toString (Node::EXTRA).c_str () << ")]";
              return dbg.space();
         }
 
-        QDebug operator<<(QDebug dbg, const LinkVector &p_lnkVtr){
-            foreach(const Link* p_lnk, p_lnkVtr)
-                dbg.space () << p_lnk;
-
-            return dbg.space ();
+        QDebug operator<<(QDebug dbg, const Link* p_lnk) {
+             dbg.nospace () << "(type: '" << p_lnk->flags ().c_str () << "') "
+                            << p_lnk->source () << "->" << p_lnk->destination ();
+             return dbg.space();
         }
-
     }
 }
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

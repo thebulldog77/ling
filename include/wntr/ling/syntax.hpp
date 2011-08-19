@@ -42,12 +42,30 @@ namespace Wintermute {
     namespace Linguistics {
         struct Link;
         struct Node;
-        struct FlatNode;
+        struct Binding;
 
+        /**
+         * @brief Represents a @c QVector of strings.
+         * @typedef StringVector
+         */
         typedef QVector<string> StringVector;
+        /**
+         * @brief Represents a @c QVector of @c Nodes;
+         * @typedef NodeVector
+         */
         typedef QVector<Node*> NodeVector;
+        /**
+         * @brief Represents a @c QVector of @c Links;
+         * @typedef LinkVector
+         */
         typedef QVector<Link*> LinkVector;
 
+        /**
+         * @brief An object representing the lexical and syntactic bindings of a word-symbol.
+         * Wintermute's natural language processing system uses nodes to represent individual word
+         * symbols in lexical representation and in syntactical representation.
+         * @class Node syntax.hpp "include/wntr/ling/syntax.hpp"
+         */
         class Node : public QObject {
             Q_GADGET
             Q_PROPERTY(const string id READ id)
@@ -56,106 +74,287 @@ namespace Wintermute {
             Q_PROPERTY(const string value READ toString)
             Q_PROPERTY(const Leximap flags READ flags)
             Q_PROPERTY(const Lexidata* data READ data)
-            Q_ENUMS(FormatDensity)
+            Q_ENUMS(FormatVerbosity)
 
-            friend class FlatNode;
+            friend class Link;
+
             protected:
-                Node ( Lexidata p_lxdt ) : m_lxdt(p_lxdt) { }
                 Lexidata m_lxdt;
 
             public:
-                enum FormatDensity {
+                /**
+                 * @brief Null constructor.
+                 * @fn Node
+                 */
+                Node( ) : m_lxdt() { }
+                /**
+                 * @brief The format verbosity of a Node in text.
+                 * The enumeration shown here represents the verbosity of the information
+                 * generated when representing a @c Node as a string.
+                 * @enum FormatVerbosity.
+                 */
+                enum FormatVerbosity {
                     FULL = 0,
                     MINIMAL,
                     EXTRA
                 };
 
-                explicit Node( ) : m_lxdt() { }
+                /**
+                 * @brief
+                 * @fn Node
+                 * @param p_lxdt
+                 */
+                Node ( Lexidata p_lxdt ) : m_lxdt(p_lxdt) { }
+                /**
+                 * @brief
+                 * @fn Node
+                 * @param p_nd
+                 */
                 Node( const Node& p_nd ) : m_lxdt(p_nd.m_lxdt) {  }
+                /**
+                 * @brief
+                 * @fn ~Node
+                 */
                 ~Node() { }
 
+                /**
+                 * @brief
+                 * @fn id
+                 * @return const string
+                 */
                 Q_INVOKABLE inline const string id() const { return *(this->m_lxdt.id ()); }
+                /**
+                 * @brief
+                 * @fn locale
+                 * @return const string
+                 */
                 Q_INVOKABLE inline const string locale() const { return *(this->m_lxdt.locale ()); }
+                /**
+                 * @brief
+                 * @fn symbol
+                 * @return const string
+                 */
                 Q_INVOKABLE inline const string symbol() const { return *(this->m_lxdt.symbol ()); }
+                /**
+                 * @brief
+                 * @fn flags
+                 * @return const Leximap
+                 */
                 Q_INVOKABLE inline const Leximap flags() const { return this->m_lxdt.flags (); }
+                /**
+                 * @brief
+                 * @fn data
+                 * @return const Lexidata *
+                 */
                 Q_INVOKABLE inline const Lexidata* data() const { return &this->m_lxdt; }
-                Q_INVOKABLE const string toString ( const FormatDensity& = FULL ) const;
+                /**
+                 * @brief
+                 * @fn isFlat
+                 * @return const bool
+                 */
+                Q_INVOKABLE inline const bool isFlat() const { return this->flags ().size () == 1; }
+                /**
+                 * @brief
+                 * @fn toString
+                 * @param
+                 */
+                Q_INVOKABLE const string toString ( const FormatVerbosity& = FULL ) const;
 
-                static const string toString ( const Node* , const FormatDensity& = FULL );
-                static const string toString ( const NodeVector& , const FormatDensity& = FULL );
-                static const Node* fromString ( const string& );
-                static const Node* obtain ( const string&, const string& );
-                static const Node* create( const Lexidata* );
-                static const Node* buildPseudo ( const string&, const string&, const string& );
+                /**
+                 * @brief
+                 * @fn toString
+                 * @param
+                 * @param
+                 */
+                static const string toString ( const Node* , const FormatVerbosity& = FULL );
+                /**
+                 * @brief
+                 * @fn toString
+                 * @param
+                 * @param
+                 */
+                static const string toString ( const NodeVector& , const FormatVerbosity& = FULL );
+                /**
+                 * @brief
+                 * @fn exists
+                 * @param
+                 * @param
+                 */
                 static const bool exists ( const string&, const string& );
-
-                bool operator == (const Node& p_nd){ return this->id () == p_nd.id () && this->m_lxdt.locale () == this->m_lxdt.locale () ;}
-                QDebug operator<<(QDebug dbg) {
-                     dbg.space () << this->symbol ().c_str () << " (" << this->toString (Node::EXTRA).c_str () << ")";
-                     return dbg.space();
-                }
-        };
-
-        class FlatNode : public Node {
-            Q_OBJECT
-
-            Q_PROPERTY(const char type READ type)
-
-            protected:
-                FlatNode ( const Node*, const int& );
-                FlatNode ( const string&, const string&, const string&, const Leximap::value_type& );
-
-            public:
-                FlatNode();
-                FlatNode ( const Node* p_nd ) : Node ( p_nd->m_lxdt ) {}
-                FlatNode ( const FlatNode& p_nd ) : Node ( p_nd ) {}
-                ~FlatNode();
-                Q_INVOKABLE const char type() const;
-                static const FlatNode* form ( const string&, const string&, const string&, const Leximap::value_type& );
-                static const FlatNode* form ( const Node* , const int& = 0 );
+                /**
+                 * @brief
+                 * @fn obtain
+                 * @param
+                 * @param
+                 */
+                static const Node* obtain ( const string&, const string& );
+                /**
+                 * @brief
+                 * @fn create
+                 * @param
+                 */
+                static const Node* create( const Lexidata* );
+                /**
+                 * @brief
+                 * @fn fromString
+                 * @param
+                 */
+                static const Node* fromString ( const string& );
+                /**
+                 * @brief
+                 * @fn buildPseudo
+                 * @param
+                 * @param
+                 * @param
+                 */
+                static const Node* buildPseudo ( const string&, const string&, const string& );
+                /**
+                 * @brief
+                 * @fn form
+                 * @param
+                 * @param
+                 */
+                static const Node* form ( const Node* , const int& = 0 );
+                /**
+                 * @brief
+                 * @fn form
+                 * @param
+                 * @param
+                 * @param
+                 * @param
+                 */
+                static const Node* form ( const string&, const string&, const string&, const Leximap::value_type& );
+                /**
+                 * @brief
+                 * @fn expand
+                 * @param
+                 */
                 static NodeVector expand ( const Node* );
-                QDebug operator<<(QDebug dbg) { return this->Node::operator << (dbg); }
+
+                /**
+                 * @brief
+                 * @fn operator ==
+                 * @param p_nd
+                 * @return bool
+                 */
+                bool operator == (const Node& p_nd){
+                    return this->id () == p_nd.id () &&
+                           this->m_lxdt.locale () == this->m_lxdt.locale ();
+                }
+
         };
 
+        /**
+         * @brief Represents syntactical binding of two nodes.
+         * The binding object that describes the relationship between two nodes can be found
+         * in this class. The @c Link object demonstrates the syntactic connection between two
+         * nodes.
+         * @class Link syntax.hpp "include/wntr/ling/syntax.hpp"
+         */
         class Link : public QObject {
             Q_OBJECT
-            Q_PROPERTY(const FlatNode* source READ source)
-            Q_PROPERTY(const FlatNode* destination READ destination)
+            Q_PROPERTY(const Node* source READ source)
+            Q_PROPERTY(const Node* destination READ destination)
             Q_PROPERTY(const string locale READ locale)
             Q_PROPERTY(const string flags READ flags)
             Q_PROPERTY(const string value READ toString)
 
             public:
-                static const Link* form ( const FlatNode* , const FlatNode* , const string&, const string& );
+                /**
+                 * @brief
+                 * @fn form
+                 * @param
+                 * @param
+                 * @param
+                 * @param
+                 */
+                static const Link* form ( const Node* , const Node* , const string&, const string& );
+                /**
+                 * @brief
+                 * @fn fromString
+                 * @param
+                 */
                 static const Link* fromString ( const string& );
-                const FlatNode* source() const;
-                const FlatNode* destination() const;
-                const string locale() const;
-                const string flags() const;
-                const string toString() const;
-                Link();
-                Link(const Link& p_lnk ) : m_src(p_lnk.m_src), m_dst(p_lnk.m_dst),
-                    m_flgs(p_lnk.m_flgs), m_lcl(p_lnk.m_lcl) { }
-                QDebug operator<<(QDebug dbg) {
-                     dbg.space () << this->toString ().c_str ();
-                     return dbg.space();
-                }
+                /**
+                 * @brief
+                 * @fn source
+                 * @return const Node *
+                 */
+                Q_INVOKABLE inline const Node* source() const { return m_src; }
+                /**
+                 * @brief
+                 * @fn destination
+                 * @return const Node *
+                 */
+                Q_INVOKABLE inline const Node* destination() const { return m_dst; }
+                /**
+                 * @brief
+                 * @fn locale
+                 * @return const string
+                 */
+                Q_INVOKABLE inline const string locale() const { return m_lcl; }
+                /**
+                 * @brief
+                 * @fn flags
+                 * @return const string
+                 */
+                Q_INVOKABLE inline const string flags() const { return m_flgs; }
+                /**
+                 * @brief
+                 * @fn toString
+                 */
+                Q_INVOKABLE const string toString() const;
+
+                /**
+                 * @brief
+                 * @fn Link
+                 */
+                Link() : m_lcl(""), m_flgs(""), m_src(NULL), m_dst(NULL){ }
+                /**
+                 * @brief
+                 * @fn Link
+                 * @param p_lnk
+                 */
+                Link(const Link& p_lnk ) : m_src(p_lnk.m_src), m_dst(p_lnk.m_dst), m_flgs(p_lnk.m_flgs), m_lcl(p_lnk.m_lcl) { }
 
             protected:
-                Link ( const FlatNode* , const FlatNode* , const string&, const string& );
+                /**
+                 * @brief
+                 * @fn Link
+                 * @param p_src
+                 * @param p_dst
+                 * @param p_flgs
+                 * @param p_lcl
+                 */
+                Link ( const Node* p_src, const Node* p_dst, const string& p_flgs, const string& p_lcl ) :
+                    m_src ( p_src ),m_dst ( p_dst ), m_flgs ( p_flgs ), m_lcl ( p_lcl ) { }
 
             private:
-                const FlatNode* m_src;
-                const FlatNode* m_dst;
+                const Node* m_src;
+                const Node* m_dst;
                 const string m_flgs;
                 const string m_lcl;
         };
+
+        /**
+         * @brief
+         * @fn operator <<
+         * @param QDebug
+         * @param
+         */
+        QDebug operator<<(QDebug , const Node *);
+        /**
+         * @brief
+         * @fn operator <<
+         * @param QDebug
+         * @param
+         */
+        QDebug operator<<(QDebug , const Link *);
     }
 }
 
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Link)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Node)
-Q_DECLARE_METATYPE(Wintermute::Linguistics::FlatNode)
 
 #endif	/* __SYNTAX_HPP */
 

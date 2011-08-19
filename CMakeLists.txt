@@ -59,7 +59,6 @@ set(WNTRLING_LIBRARIES "${WNTRDATA_LIBRARIES}"
     ${QT_LIBRARIES}
     ${Boost_LIBRARIES})
 
-
 include_directories(${WNTRLING_INCLUDE_DIRS}
     "include/wntr/ling")
 
