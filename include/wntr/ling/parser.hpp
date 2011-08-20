@@ -1,5 +1,5 @@
 /**
- * @file    parser.cpp
+ * @file    parser.hpp
  * @author  Jacky Alcine <jackyalcine@gmail.com>
  * @date    June 14, 2011 11:34 PM
  * @license GPL3
