@@ -22,29 +22,28 @@
 
 #ifndef __PARSER_HPP__
 #define __PARSER_HPP__
-#define SKIP_AUTOMOC true
 
 #include <string>
 #include <vector>
 #include <map>
 #include <QString>
-#include <QtXml/QDomDocument>
+#include <QStringList>
 #include <wntrdata.hpp>
 #include <syntax.hpp>
 
 using namespace std;
 
+using std::map;
 using std::string;
 using std::vector;
-using std::map;
 
 namespace Wintermute {
     namespace Linguistics {
+        struct Rule;
         struct Parser;
+        struct Binding;
         struct Meaning;
         struct RuleSet;
-        struct Rule;
-        struct Binding;
 
         /**
          * @brief Represents a vector of vector of nodes.
@@ -78,18 +77,30 @@ namespace Wintermute {
         typedef map<const string, RuleSet*> RuleSetMap;
 
         /**
-         * @brief
-         * @typedef OntoMap
-         */
-        typedef QMultiMap<Node*,Link*> OntoMap;
-
-        /**
          * @brief Represents the potential connection of words by a specified rule as defined by its parent rule.
          * @class Binding parser.hpp "include/wntr/ling/parser.hpp"
          */
         class Binding : public QObject {
             Q_OBJECT
             friend class Rule;
+            signals:
+                /**
+                 * @brief
+                 * @fn binded
+                 * @param
+                 * @param
+                 * @param
+                 */
+                void binded(const Binding* = NULL, const Node* = NULL, const Node* = NULL) const;
+                /**
+                 * @brief
+                 * @fn bindFailed
+                 * @param
+                 * @param
+                 * @param
+                 */
+                void bindFailed(const Binding* = NULL, const Node* = NULL, const Node* = NULL) const;
+
             public:
                 /**
                  * @brief
@@ -381,25 +392,25 @@ namespace Wintermute {
                  * @fn getTokens
                  * @param
                  */
-                StringVector getTokens ( const string& );
+                QStringList getTokens ( string const & );
                 /**
                  * @brief
                  * @fn formNode
                  * @param
                  */
-                Node* formNode(const string& );
+                Node* formNode( QString const & );
                 /**
                  * @brief
                  * @fn formNodes
                  * @param
                  */
-                NodeVector formNodes ( StringVector& );
+                NodeVector formNodes ( QStringList const & );
                 /**
                  * @brief
                  * @fn expandNodes
                  * @param
                  */
-                NodeTree expandNodes ( NodeVector& );
+                NodeTree expandNodes ( NodeVector const & );
                 /**
                  * @brief
                  * @fn expandNodes
@@ -454,94 +465,6 @@ namespace Wintermute {
                  */
                 void finishedMeaningForming();
         };
-
-        /**
-         * @brief Represents the end-result of linguistics linking and provides an easier means of glancing into the linking process.
-         * @class Meaning parser.hpp "include/wntr/ling/parser.hpp"
-         */
-        class Meaning : public QObject {
-            Q_OBJECT
-
-            Q_PROPERTY(const Link* base READ base)
-            Q_PROPERTY(const LinkVector* siblings READ siblings)
-
-            public:
-                /**
-                 * @brief
-                 * @fn Meaning
-                 * @param p_lnkVtr
-                 */
-                explicit Meaning(const LinkVector& p_lnkVtr = LinkVector()) : m_lnkVtr(p_lnkVtr) { __init(); }
-
-                /**
-                 * @brief
-                 * @fn Meaning
-                 * @param p_mng
-                 */
-                Meaning(const Meaning& p_mng) : m_lnkVtr(p_mng.m_lnkVtr) { __init(); }
-
-                /**
-                 * @brief
-                 * @fn ~Meaning
-                 */
-                ~Meaning() { }
-
-                /**
-                 * @brief
-                 * @fn base
-                 */
-                Q_INVOKABLE inline const Link* base() const { return m_lnkVtr.front (); }
-
-                /**
-                 * @brief
-                 * @fn siblings
-                 * @return const LinkVector *
-                 */
-                Q_INVOKABLE inline const LinkVector* siblings() const { return &m_lnkVtr; }
-
-                /**
-                 * @brief
-                 * @fn toText
-                 */
-                const string toText() const;
-
-                /**
-                 * @brief
-                 * @fn isLinkedTo
-                 * @param
-                 */
-                const LinkVector isLinkedTo(const Node& ) const;
-
-                /**
-                 * @brief
-                 * @fn isLinkedBy
-                 * @param
-                 */
-                const LinkVector isLinkedBy(const Node& ) const;
-
-                /**
-                 * @brief
-                 * @fn form
-                 * @param
-                 * @param
-                 */
-                static const Meaning* form ( const NodeVector& , LinkVector* = new LinkVector );
-
-                /**
-                 * @brief
-                 * @fn form
-                 * @param
-                 */
-                static const Meaning* form ( const LinkVector* = NULL );
-
-            protected:
-                LinkVector m_lnkVtr;
-                OntoMap m_ontoMap;
-
-            private:
-                void __init();
-        };
-
     }
 }
 
@@ -549,7 +472,6 @@ Q_DECLARE_METATYPE(Wintermute::Linguistics::Parser)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Binding)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::RuleSet)
-Q_DECLARE_METATYPE(Wintermute::Linguistics::Meaning)
 
 
 #endif /* __PARSER_HPP__ */

@@ -25,6 +25,7 @@
 
 #include <syntax.hpp>
 #include <parser.hpp>
+#include <meanings.hpp>
 
 #endif /* WINTERMUTE_LINGUISTICS */
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

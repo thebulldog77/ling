@@ -64,6 +64,7 @@ include_directories(${WNTRLING_INCLUDE_DIRS}
 
 file(GLOB WNTRLING_SHPP include/wntr/ling/*.hpp)
 file(GLOB WNTRLING_SCPP src/*.cpp)
+file(GLOB CMAKE_MODULES "${PROJECT_SOURCE_DIR}/cmake/Modules/*.cmake")
 
 QT4_WRAP_CPP(MOC_CODE "${WNTRLING_SHPP}")
 

@@ -35,8 +35,8 @@ using namespace Wintermute::Data::Linguistics;
 using std::map;
 using std::string;
 using std::vector;
-using Wintermute::Data::Linguistics::Lexical::Leximap;
-using Wintermute::Data::Linguistics::Lexical::Lexidata;
+using Wintermute::Data::Linguistics::Lexical::Data;
+using Wintermute::Data::Linguistics::Lexical::DataFlagMap;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -72,21 +72,16 @@ namespace Wintermute {
             Q_PROPERTY(const string locale READ locale)
             Q_PROPERTY(const string symbol READ symbol)
             Q_PROPERTY(const string value READ toString)
-            Q_PROPERTY(const Leximap flags READ flags)
-            Q_PROPERTY(const Lexidata* data READ data)
+            Q_PROPERTY(const DataFlagMap flags READ flags)
+            Q_PROPERTY(const Data* data READ data)
             Q_ENUMS(FormatVerbosity)
 
             friend class Link;
 
             protected:
-                Lexidata m_lxdt;
+                Lexical::Data m_lxdt;
 
             public:
-                /**
-                 * @brief Null constructor.
-                 * @fn Node
-                 */
-                Node( ) : m_lxdt() { }
                 /**
                  * @brief The format verbosity of a Node in text.
                  * The enumeration shown here represents the verbosity of the information
@@ -100,17 +95,27 @@ namespace Wintermute {
                 };
 
                 /**
+                 * @brief Null constructor.
+                 * @fn Node
+                 */
+                Node( ) : m_lxdt() { }
+
+                /**
                  * @brief
                  * @fn Node
                  * @param p_lxdt
                  */
-                Node ( Lexidata p_lxdt ) : m_lxdt(p_lxdt) { }
+                Node ( Lexical::Data p_lxdt ) : m_lxdt(p_lxdt) {
+                    this->setProperty ("OriginalToken",symbol ());
+                }
                 /**
                  * @brief
                  * @fn Node
                  * @param p_nd
                  */
-                Node( const Node& p_nd ) : m_lxdt(p_nd.m_lxdt) {  }
+                Node( const Node& p_nd ) : m_lxdt(p_nd.m_lxdt) {
+                    this->setProperty ("OriginalToken",symbol ());
+                }
                 /**
                  * @brief
                  * @fn ~Node
@@ -122,31 +127,31 @@ namespace Wintermute {
                  * @fn id
                  * @return const string
                  */
-                Q_INVOKABLE inline const string id() const { return *(this->m_lxdt.id ()); }
+                Q_INVOKABLE inline const QString id() const { return this->m_lxdt.id (); }
                 /**
                  * @brief
                  * @fn locale
                  * @return const string
                  */
-                Q_INVOKABLE inline const string locale() const { return *(this->m_lxdt.locale ()); }
+                Q_INVOKABLE inline const QString locale() const { return this->m_lxdt.locale (); }
                 /**
                  * @brief
                  * @fn symbol
                  * @return const string
                  */
-                Q_INVOKABLE inline const string symbol() const { return *(this->m_lxdt.symbol ()); }
+                Q_INVOKABLE inline const QString symbol() const { return this->m_lxdt.symbol (); }
                 /**
                  * @brief
                  * @fn flags
-                 * @return const Leximap
+                 * @return const DataFlagMap
                  */
-                Q_INVOKABLE inline const Leximap flags() const { return this->m_lxdt.flags (); }
+                Q_INVOKABLE inline const DataFlagMap flags() const { return this->m_lxdt.flags (); }
                 /**
                  * @brief
                  * @fn data
-                 * @return const Lexidata *
+                 * @return const Data *
                  */
-                Q_INVOKABLE inline const Lexidata* data() const { return &this->m_lxdt; }
+                Q_INVOKABLE inline const Lexical::Data* data() const { return &this->m_lxdt; }
                 /**
                  * @brief
                  * @fn isFlat
@@ -193,7 +198,7 @@ namespace Wintermute {
                  * @fn create
                  * @param
                  */
-                static const Node* create( const Lexidata* );
+                static const Node* create( const Lexical::Data& );
                 /**
                  * @brief
                  * @fn fromString
@@ -215,15 +220,15 @@ namespace Wintermute {
                  * @param
                  */
                 static const Node* form ( const Node* , const int& = 0 );
+
                 /**
                  * @brief
+                 *
                  * @fn form
                  * @param
-                 * @param
-                 * @param
-                 * @param
                  */
-                static const Node* form ( const string&, const string&, const string&, const Leximap::value_type& );
+                static const Node* form ( Lexical::Data );
+
                 /**
                  * @brief
                  * @fn expand
