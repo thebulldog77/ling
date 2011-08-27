@@ -24,18 +24,15 @@
 #define __PARSER_HPP__
 
 #include <string>
-#include <vector>
 #include <map>
 #include <QString>
 #include <QStringList>
-#include <wntrdata.hpp>
+#include <wntr/data/models.hpp>
 #include <syntax.hpp>
 
 using namespace std;
 
-using std::map;
 using std::string;
-using std::vector;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -43,38 +40,31 @@ namespace Wintermute {
         struct Parser;
         struct Binding;
         struct Meaning;
-        struct RuleSet;
 
         /**
          * @brief Represents a vector of vector of nodes.
          * @typedef NodeTree
          */
-        typedef QVector<NodeVector> NodeTree;
+        typedef QList<NodeVector> NodeTree;
 
         /**
          * @brief Represents a collection of meanings.
          * @typedef MeaningVector
          */
-        typedef QVector<Meaning*> MeaningVector;
+        typedef QList<Meaning*> MeaningVector;
 
         /**
          * @brief
          * @typedef RuleList
          */
-        typedef QVector<Rule*> RuleVector;
+        typedef QList<Rule*> RuleVector;
 
         /**
          * @brief
          *
          * @typedef BindingVector
          */
-        typedef QVector<Binding*> BindingVector;
-
-        /**
-         * @brief
-         * @typedef RuleSetMap
-         */
-        typedef map<const string, RuleSet*> RuleSetMap;
+        typedef QList<Binding*> BindingVector;
 
         /**
          * @brief Represents the potential connection of words by a specified rule as defined by its parent rule.
@@ -106,18 +96,25 @@ namespace Wintermute {
                  * @brief
                  * @fn Binding
                  */
-                explicit Binding() : m_rl(NULL) { }
+                explicit Binding();
                 /**
                  * @brief
                  * @fn Binding
                  * @param p_bnd
                  */
-                Binding(const Binding& p_bnd) : m_rl(p_bnd.m_rl), m_ele(p_bnd.m_ele) { }
+                Binding(const Binding& );
                 /**
                  * @brief
                  * @fn ~Binding
                  */
                 ~Binding() { }
+                /**
+                 * @brief
+                 *
+                 * @fn obtain
+                 * @param
+                 * @param
+                 */
                 static const Binding* obtain ( const Node&, const Node& );
                 /**
                  * @brief
@@ -152,10 +149,10 @@ namespace Wintermute {
                  * @param QDomElement
                  * @param
                  */
-                Binding ( QDomElement , const Rule* );
+                Binding ( const Rules::Bond& , const Rule* );
 
             private:
-                QDomElement m_ele;
+                Rules::Bond m_bnd;
                 const Rule* m_rl;
         };
 
@@ -166,16 +163,29 @@ namespace Wintermute {
         class Rule : public QObject {
             Q_OBJECT
             Q_PROPERTY(string type READ type)
+            Q_PROPERTY(string locale READ locale)
 
             friend class RuleSet;
             public:
-                ~Rule() { }
+                virtual ~Rule() { }
                 /**
                  * @brief Copy constructor.
                  * @fn Rule
                  * @param Rule The original Node.
                  */
-                Rule ( const Rule& p_rl ) : m_ele(p_rl.m_ele), m_rlst(p_rl.m_rlst), m_bndVtr(p_rl.m_bndVtr) { }
+                Rule ( const Rule& );
+                /**
+                 * @brief
+                 *
+                 * @fn Rule
+                 * @param
+                 */
+                Rule ( const Rules::Chain& );
+                /**
+                 * @brief Empty constructor.
+                 * @fn Rule
+                 */
+                explicit Rule( );
                 /**
                  * @brief Returns a Rule that's satisified by this Node.
                  * @fn obtain
@@ -202,6 +212,12 @@ namespace Wintermute {
                  */
                 const string type() const;
                 /**
+                 * @brief
+                 *
+                 * @fn locale
+                 */
+                const string locale() const;
+                /**
                  * @brief Determines if a Node is qualified to use this Rule.
                  * @fn appliesFor
                  * @param Node The source node in question.
@@ -214,117 +230,11 @@ namespace Wintermute {
                  * @param Node The destination Node in question.
                  */
                 const Binding* getBindingFor ( const Node&, const Node& ) const;
-                /**
-                 * @brief Returns a pointer to the RuleSet this originated from.
-                 * @fn parentRuleSet
-                 */
-                const RuleSet* parentRuleSet() const;
-
-                /**
-                 * @brief Constructor.
-                 * @fn Rule
-                 * @param QDomElement The element that contains the binding data.
-                 * @param RuleSet The parent RuleSet.
-                 */
-                explicit Rule ( QDomElement p_ele , const RuleSet* p_rlst ) : m_ele(p_ele), m_rlst(p_rlst) { __init(); }
-                /**
-                 * @brief Empty constructor.
-                 * @fn Rule
-                 */
-                Rule( ) : m_rlst(NULL) { }
 
             private:
                 void __init();
-                QDomElement m_ele;
-                const RuleSet* m_rlst;
+                Rules::Chain m_chn;
                 BindingVector m_bndVtr;
-        };
-
-        /**
-         * @brief Represents a source of obtaining rules and directly forming bindings with linguistics information.
-         * This class manages the obtaining of rules from a certain locale.
-         * @class RuleSet parser.hpp "include/wntr/ling/parser.hpp"
-         * @todo Define methods for creating new rules and bindings.
-         */
-        class RuleSet : public QObject {
-            Q_OBJECT
-
-            Q_PROPERTY(string locale READ locale WRITE setLocale)
-
-            public:
-                static RuleSet* obtain ( const Node& );
-                /**
-                 * @brief Returns the Rule that can be used to link with another node.
-                 * @fn getRuleFor
-                 * @param Node The source node to search for a Rule with.
-                 */
-                const Rule* getRuleFor ( const Node& ) const;
-                /**
-                 * @brief Returns the Binding that can link the two specified nodes.
-                 * @fn getBindingFor
-                 * @param Node The source node to search for a Rule with.
-                 * @param Node The destination node to search against the possible Binding with.
-                 */
-                const Binding* getBindingFor ( const Node& , const Node& ) const;
-                /**
-                 * @brief Determines if a Link can be created between the supplied nodes.
-                 * @fn canBind
-                 * @param Node The source node for linking in question.
-                 * @param Node The destination node for linking in question.
-                 */
-                const bool canBind ( const Node& , const Node & ) const;
-                /**
-                 * @brief Creates a Link between two nodes based on the rules in this RuleSet.
-                 * @fn bind
-                 * @param Node The source node for linking.
-                 * @param Node The destination node for linking.
-                 */
-                const Link* bind ( const Node&, const Node & ) const;
-                /**
-                 * @brief The locale in use.
-                 * Returns the value of the locale containing the rules for this RuleSet.
-                 * @fn locale
-                 */
-                const string locale() const;
-
-                /**
-                 * @brief
-                 * @fn setLocale
-                 * @param
-                 */
-                void setLocale(const string& = Wintermute::Data::Linguistics::Configuration::locale ());
-
-                /**
-                 * @brief
-                 * @fn RuleSet
-                 * @param p_lcl
-                 */
-                explicit RuleSet ( const string& p_lcl = Wintermute::Data::Linguistics::Configuration::locale ()  ) : m_dom((new QDomDocument)),
-                    m_rules((new RuleVector)) { __init(p_lcl); }
-
-                /**
-                 * @brief
-                 * @fn RuleSet
-                 * @param p_rlst
-                 */
-                RuleSet(const RuleSet& p_rlst) : m_dom(p_rlst.m_dom), m_rules(p_rlst.m_rules) { }
-
-                /**
-                 * @brief
-                 * @fn ~RuleSet
-                 */
-                ~RuleSet() { }
-
-            private:
-                /**
-                 * @brief
-                 * @fn __init
-                 */
-                void __init ( const string& = Wintermute::Data::Linguistics::Configuration::locale () );
-
-                QDomDocument* m_dom;
-                RuleVector* m_rules;
-                static RuleSetMap s_rsm;
         };
 
         /**
@@ -471,7 +381,6 @@ namespace Wintermute {
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Parser)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Binding)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
-Q_DECLARE_METATYPE(Wintermute::Linguistics::RuleSet)
 
 
 #endif /* __PARSER_HPP__ */

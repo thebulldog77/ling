@@ -18,7 +18,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * @endlegalese
  */
-/// @todo Replace the md5() feature and just have a giant, giant dictionary that links words to their IDs. In this case, every word (or a pre-defined list of words) should be loaded each time. Sounds like something MySQL would be perfect for.
 
 #ifndef __SYNTAX_HPP__
 #define __SYNTAX_HPP__
@@ -26,15 +25,13 @@
 #include <string>
 #include <syntax.hpp>
 #include <QMap>
-#include <QVector>
+#include <QList>
 #include <wntrdata.hpp>
 
 using namespace std;
 using namespace Wintermute::Data::Linguistics;
 
-using std::map;
 using std::string;
-using std::vector;
 using Wintermute::Data::Linguistics::Lexical::Data;
 using Wintermute::Data::Linguistics::Lexical::DataFlagMap;
 
@@ -48,17 +45,17 @@ namespace Wintermute {
          * @brief Represents a @c QVector of strings.
          * @typedef StringVector
          */
-        typedef QVector<string> StringVector;
+        typedef QList<string> StringVector;
         /**
          * @brief Represents a @c QVector of @c Nodes;
          * @typedef NodeVector
          */
-        typedef QVector<Node*> NodeVector;
+        typedef QList<Node*> NodeVector;
         /**
          * @brief Represents a @c QVector of @c Links;
          * @typedef LinkVector
          */
-        typedef QVector<Link*> LinkVector;
+        typedef QList<Link*> LinkVector;
 
         /**
          * @brief An object representing the lexical and syntactic bindings of a word-symbol.
@@ -68,10 +65,10 @@ namespace Wintermute {
          */
         class Node : public QObject {
             Q_GADGET
-            Q_PROPERTY(const string id READ id)
-            Q_PROPERTY(const string locale READ locale)
-            Q_PROPERTY(const string symbol READ symbol)
-            Q_PROPERTY(const string value READ toString)
+            Q_PROPERTY(const QString id READ id)
+            Q_PROPERTY(const QString locale READ locale)
+            Q_PROPERTY(const QString symbol READ symbol)
+            Q_PROPERTY(const QString value READ toString)
             Q_PROPERTY(const DataFlagMap flags READ flags)
             Q_PROPERTY(const Data* data READ data)
             Q_ENUMS(FormatVerbosity)
@@ -89,9 +86,9 @@ namespace Wintermute {
                  * @enum FormatVerbosity.
                  */
                 enum FormatVerbosity {
-                    FULL = 0,
-                    MINIMAL,
-                    EXTRA
+                    FULL = 0, /**< TODO */
+                    MINIMAL, /**< TODO */
+                    EXTRA /**< TODO */
                 };
 
                 /**
@@ -127,37 +124,44 @@ namespace Wintermute {
                  * @fn id
                  * @return const string
                  */
-                Q_INVOKABLE inline const QString id() const { return this->m_lxdt.id (); }
+                Q_INVOKABLE inline const QString id() const { return m_lxdt.id (); }
                 /**
                  * @brief
                  * @fn locale
                  * @return const string
                  */
-                Q_INVOKABLE inline const QString locale() const { return this->m_lxdt.locale (); }
+                Q_INVOKABLE inline const QString locale() const { return m_lxdt.locale (); }
                 /**
                  * @brief
                  * @fn symbol
                  * @return const string
                  */
-                Q_INVOKABLE inline const QString symbol() const { return this->m_lxdt.symbol (); }
+                Q_INVOKABLE inline const QString symbol() const { return m_lxdt.symbol (); }
                 /**
                  * @brief
                  * @fn flags
                  * @return const DataFlagMap
                  */
-                Q_INVOKABLE inline const DataFlagMap flags() const { return this->m_lxdt.flags (); }
+                Q_INVOKABLE inline const DataFlagMap flags() const { return m_lxdt.flags (); }
                 /**
                  * @brief
                  * @fn data
                  * @return const Data *
                  */
-                Q_INVOKABLE inline const Lexical::Data* data() const { return &this->m_lxdt; }
+                Q_INVOKABLE inline const Lexical::Data* data() const { return &m_lxdt; }
                 /**
                  * @brief
                  * @fn isFlat
                  * @return const bool
                  */
                 Q_INVOKABLE inline const bool isFlat() const { return this->flags ().size () == 1; }
+                /**
+                 * @brief
+                 *
+                 * @fn isPseudo
+                 * @return const bool
+                 */
+                Q_INVOKABLE inline const bool isPseudo() const { return Lexical::Cache::isPseudo (m_lxdt); }
                 /**
                  * @brief
                  * @fn toString
@@ -210,16 +214,8 @@ namespace Wintermute {
                  * @fn buildPseudo
                  * @param
                  * @param
-                 * @param
                  */
-                static const Node* buildPseudo ( const string&, const string&, const string& );
-                /**
-                 * @brief
-                 * @fn form
-                 * @param
-                 * @param
-                 */
-                static const Node* form ( const Node* , const int& = 0 );
+                static const Node* buildPseudo ( const string&, const string& );
 
                 /**
                  * @brief
@@ -238,11 +234,11 @@ namespace Wintermute {
 
                 /**
                  * @brief
-                 * @fn operator ==
+                 * @fn operator==
                  * @param p_nd
                  * @return bool
                  */
-                bool operator == (const Node& p_nd){
+                bool operator== (const Node& p_nd){
                     return this->id () == p_nd.id () &&
                            this->m_lxdt.locale () == this->m_lxdt.locale ();
                 }

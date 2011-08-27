@@ -20,6 +20,18 @@
  * Boston, MA  02110-1301  USA
  */
 
+/**
+ * @mainpage Wintermute Linguistics (WntrLing)
+ * Wintermute uses an unique blend of natural language processing learning utilities,
+ * some of which are similar to already existing projects (such as LinkGrammar at OpenCog
+ * or Panlingua by Chamount Devin). The natural languge processing used here is an adaptive,
+ * link-based approach. By using an externally defined set of rules and an external list
+ * of words with each of its tenses and variations linked to an ontology concept; it's
+ * possible for WntrLing to form ontological representation of natural text. This, in turn,
+ * provides an immediate form of natural language processing.D
+ *
+ */
+
 #ifndef WINTERMUTE_LINGUISTICS
 #define WINTERMUTE_LINGUISTICS
 

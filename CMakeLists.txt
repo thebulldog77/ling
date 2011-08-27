@@ -38,7 +38,6 @@ find_package(Boost 1.4 COMPONENTS
 
 find_package(Qt4 4.4.3 COMPONENTS
     QtCore
-    QtXml
     QT_DONT_USE_GUI
     REQUIRED)
 

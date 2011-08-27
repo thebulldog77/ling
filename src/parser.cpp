@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.orgccc/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * @endlegalese
  *
  * @todo Remove the connection to QtXml in this code and implement the read/write capabilities of RuleSets in WntrData::Linguistics.
@@ -30,7 +30,6 @@
 #include <iostream>
 #include <iomanip>
 #include <QFile>
-#include <QtXml>
 #include <QString>
 #include <QVector>
 #include <QtDebug>
@@ -39,17 +38,14 @@
 #include "syntax.hpp"
 
 using namespace std;
+using namespace Wintermute::Data::Linguistics;
 
 using std::cout;
 using std::endl;
-using Wintermute::Data::Linguistics::Lexical::SaveModel;
-using Wintermute::Data::Linguistics::Lexical::Storage;
 
 namespace Wintermute {
     namespace Linguistics {
-        RuleSetMap RuleSet::s_rsm;
-
-        Binding::Binding ( QDomElement p_ele, const Rule* p_rl ) : m_rl ( p_rl ), m_ele ( p_ele ){ }
+        Binding::Binding ( const Rules::Bond& p_bnd , const Rule* p_rl ) : m_bnd(p_bnd), m_rl(p_rl) { }
 
         const Binding* Binding::obtain ( const Node& p_nd, const Node& p_nd2 ) {
             const Rule* l_rl = Rule::obtain ( p_nd );
@@ -58,45 +54,41 @@ namespace Wintermute {
         }
 
         const QString Binding::getAttrValue ( const QString &p_attr ) const {
-            return m_ele.attribute ( p_attr );
+            return m_bnd.attribute (p_attr);
         }
 
         /// @todo This method needs to match with more precision.
         const double Binding::canBind ( const Node &p_nd, const Node& p_nd2 ) const {
-            if ( !this->parentRule ()->appliesFor ( p_nd ) )
+            if ( this->parentRule ()->appliesFor ( p_nd ) == 0.0 )
                 return 0.0;
 
-            const QString l_wh = this->m_ele.attribute ( "with" );
-            const QString l_ndStr ( p_nd2.toString ( Node::EXTRA ).c_str () );
+            const QString l_wh = m_bnd.attribute ( "with" );
+            const QString l_ndStr = QString::fromStdString (p_nd2.toString ( Node::EXTRA ));
             QStringList l_options = l_wh.split ( "," );
 
-            for ( QStringList::ConstIterator l_itr = l_options.begin (); l_itr != l_options.end (); l_itr++ ) {
-                const QString l_s = *l_itr;
-                const bool l_half = (l_ndStr.contains ( l_s ) || l_ndStr.indexOf ( l_s ) != -1);
-                const bool l_full = (l_ndStr == l_s);
-                double l_rtn = 0.0;
+            foreach (const QString l_s, l_options) {
+                double l_rtn = Rules::Bond::matches(l_ndStr,l_wh);
 
-                if (l_half && !l_full) l_rtn = 0.5;
-                else if ((!l_half && l_full) || (l_half && l_full)) l_rtn = 1.0;
+                if (l_rtn > 0.0) {
+                    if (m_bnd.hasAttribute ("typeHas")){
+                        qDebug() << "(ling) [Binding] Required type!" << endl;
+                        const QString l_hasTypeHas ( p_nd.toString ( Node::EXTRA ).c_str () );
+                        const QString l_bindType = this->getAttrValue ( "typeHas" );
 
-                if (m_ele.hasAttribute ("typeHas")){
-                    qDebug() << "(ling) [Binding] Required type!" << endl;
-                    const QString l_hasTypeHas ( p_nd.toString ( Node::EXTRA ).c_str () );
-                    const QString l_bindType = this->getAttrValue ( "typeHas" );
-
-                    if ( !l_bindType.isEmpty () ) {
-                        if ( ! l_bindType.contains ( l_hasTypeHas ) )
-                            l_rtn = 0.0;
+                        if ( !l_bindType.isEmpty () ) {
+                            if ( ! l_bindType.contains ( l_hasTypeHas ) )
+                                l_rtn = 0.0;
+                        }
                     }
-                }
 
-                if (l_rtn != 0.0) {
-                    qDebug() << "(ling) [Binding] Bond: "<< l_rtn * 100 << "% for '" << p_nd.symbol () << "' to '" << p_nd2.symbol () << "'";
+                    qDebug() << "(ling) [Binding] Bond:"<< l_rtn * 100 << "% for" << p_nd.symbol () << "to" << p_nd2.symbol () << "via" << l_wh;
                     return l_rtn;
                 }
             }
 
-            qDebug() << "(ling) [Binding] Binding failed for %ND2 -> %ND1 : " << p_nd.toString (Node::EXTRA).c_str ()<< " " << l_ndStr;
+            qDebug() << m_bnd.attribute ("with");
+            qDebug() << "(ling) [Binding] Binding failed for (src) -> (dst) :"
+                     << p_nd.toString (Node::EXTRA).c_str () << " -> " << l_ndStr.toStdString ().c_str () << " via" << l_wh;
 
             return 0.0;
         }
@@ -108,28 +100,30 @@ namespace Wintermute {
                 return NULL;
             }
 
-            QString l_type = this->parentRule ()->type ().c_str ();
-            QString l_lcl = this->parentRule ()->parentRuleSet ()->locale ().c_str ();
+            QString l_type = QString::fromStdString (this->parentRule ()->type ());
+            QString l_lcl = QString::fromStdString (this->parentRule ()->locale());
             Node *l_nd = const_cast<Node*> ( &p_nd1 ), *l_nd2 = const_cast<Node*> ( &p_nd2 );
 
-            if (m_ele.hasAttribute ("linkAction")){
-                const QStringList l_eleStr = m_ele.attribute ("linkAction").split (",");
+            if (m_bnd.hasAttribute ("linkAction")){
+                const QStringList l_options = m_bnd.attribute ("linkAction").split (",");
+                qDebug() << l_options;
 
-                if (l_eleStr.contains ("reverse")) {
-                    l_type = p_nd2.toString ( Node::MINIMAL ).c_str ();
-                    l_lcl = p_nd2.locale ().toStdString ().c_str ();
+                if (l_options.contains ("reverse")) {
+                    l_type = QString::fromStdString (p_nd2.toString ( Node::MINIMAL )).at (0);
+                    l_lcl = p_nd2.locale ();
                     Node *l_tmp = l_nd;
                     l_nd = l_nd2;
                     l_nd2 = l_tmp;
-                    //qDebug() << "(ling) [Binding] Reversed the type and locale of the link.";
-                } else if (l_eleStr.contains ("othertype")){
-                    l_type = p_nd2.toString ( Node::MINIMAL ).c_str ();
-                } else if (l_eleStr.contains ("thistype")){
-                    l_type = p_nd1.toString ( Node::MINIMAL ).c_str ();
+                    qDebug() << "(ling) [Binding] Reversed the type(" << l_type << ") and locale(" << l_lcl << ") of the link.";
+                } else if (l_options.contains ("othertype")){
+                    l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
+                } else if (l_options.contains ("thistype")){
+                    l_type = p_nd1.toString ( Node::MINIMAL ).at (0);
                 }
             }
 
             emit binded(this,&p_nd1,&p_nd2);
+            qDebug() << QString::fromStdString (m_rl->type ()) << m_bnd.with ();
             return Link::form ( *&l_nd, *&l_nd2 , l_type.toStdString () , l_lcl.toStdString () );
         }
 
@@ -137,18 +131,21 @@ namespace Wintermute {
             return m_rl;
         }
 
-        void Rule::__init() {
-            QDomNodeList l_ndlst = m_ele.elementsByTagName ( "Bind" );
+        Rule::Rule(const Rule& p_rl) : m_chn(p_rl.m_chn) { __init(); }
 
-            for ( int i = 0; i < l_ndlst.count (); i++ ) {
-                QDomElement l_e = l_ndlst.at ( i ).toElement ();
-                m_bndVtr.push_back ( ( new Binding ( l_e,this ) ) );
-            }
+        Rule::Rule(const Rules::Chain &p_chn) : m_chn(p_chn) { __init(); }
+
+        void Rule::__init() {
+            foreach (Rules::Bond* l_bnd, m_chn.bonds())
+                m_bndVtr.push_back ((new Binding(*&*l_bnd,this)));
         }
 
         const Rule* Rule::obtain ( const Node& p_nd ) {
-            const RuleSet* l_rlst = RuleSet::obtain ( p_nd );
-            return l_rlst->getRuleFor ( p_nd );
+            const QString l_lcl = p_nd.locale ();
+            const QString l_flg = p_nd.flags ().begin ().value ();
+            Rules::Chain l_chn(l_lcl,l_flg);
+            Rules::Cache::read (l_chn);
+            return new Rule(l_chn);
         }
 
         const Link* Rule::bind ( const Node& p_curNode, const Node& p_nextNode ) const {
@@ -178,7 +175,7 @@ namespace Wintermute {
                 const double l_vl = l_bnd->canBind ( p_nd,p_nd2 );
                 if ( l_vl > 0.0 || l_vl == 1.0 ){
                     l_bndLevel.insert (map<const double,const Binding*>::value_type(l_vl,l_bnd));
-                    qDebug() << "(ling) [Rule] Valid binding for '" << p_nd.symbol () << "' to '" << p_nd2.symbol () << "'";
+                    qDebug() << "(ling) [Rule] Valid binding for" << p_nd.symbol () << "to" << p_nd2.symbol ();
                 }
             }
 
@@ -192,122 +189,17 @@ namespace Wintermute {
         const double Rule::appliesFor ( const Node& p_nd ) const {
             const QString l_ndStr ( p_nd.toString ( Node::EXTRA ).c_str () );
             const QString l_rlStr ( type().c_str () );
-            const bool l_half = ( l_ndStr.contains ( l_rlStr ) || l_ndStr.indexOf ( l_rlStr ) != -1 );
-            const bool l_full = l_ndStr == l_rlStr;
-            double l_rtn = 0.0;
+            const double l_rtn = Rules::Bond::matches(l_ndStr,l_rlStr);
 
-            if ((!l_half && l_full) || (l_half && l_full)) l_rtn = 1.0;
-            else if (l_half && !l_full) l_rtn = 0.5;
-
-            if (l_rtn != 0.0) {
-                qDebug() << "(ling) [Rule] Bond: " << l_rtn * 100 << "% for '" << p_nd.symbol () << "'";
-            }
+            if (l_rtn != 0.0)
+                qDebug() << "(ling) [Rule] Bond:" << l_rtn * 100 << "% for " << p_nd.toString (Node::MINIMAL).c_str ();
 
             return l_rtn;
         }
 
-        const string Rule::type() const {
-            return m_ele.attribute ( "type" ).toStdString ();
-        }
+        const string Rule::type() const { return m_chn.type ().toStdString (); }
 
-        const RuleSet* Rule::parentRuleSet () const {
-            return m_rlst;
-        }
-
-        /// @todo Remove the checks for m_dom and m_rules and just have them clear the previous information in each value upon load.
-        void RuleSet::__init ( const string& p_lcl ) {
-            const string l_pth = Data::Linguistics::Configuration::directory () + string ( "/" ) + p_lcl + string ( "/grammar.xml" );
-            qDebug() << "(ling) [RuleSet] Loading '" << l_pth.c_str () << "'...";
-            QFile *l_rlstDoc = new QFile ( QString ( l_pth.c_str () ) );
-
-            if (!l_rlstDoc->open ( QIODevice::ReadOnly )){
-                qWarning() << "(ling) [RuleSet] Failed to read data from RuleSet document!";
-                return;
-            }
-
-            if (!m_dom) m_dom = new QDomDocument;
-
-            {
-                QString l_errorMsg;
-                int l_errorLine, l_errorColumn;
-                if (!m_dom->setContent ( l_rlstDoc , &l_errorMsg, &l_errorLine, &l_errorColumn )){
-                    qDebug () << "(ling) [RuleSet] Failed to load XML data for RuleSet. Error:" << l_errorMsg << "on line" << l_errorLine << "at column" << l_errorColumn;
-                    return;
-                }
-            }
-
-            QDomElement l_ele = m_dom->documentElement ();
-            QDomNodeList l_ruleNdLst = l_ele.elementsByTagName ( "Rule" );
-
-            if ( !m_rules->empty() ) m_rules->clear();
-
-            for ( int i = 0; i < l_ruleNdLst.count (); i++ ) {
-                QDomNode l_domNd = l_ruleNdLst.at ( i );
-                QDomElement l_curEle = l_domNd.toElement ();
-                if ( l_curEle.tagName () == "Rule" )
-                    m_rules->push_back ( new Rule ( l_curEle,this ) );
-            }
-
-            qDebug() << "(ling) [RuleSet] Loaded " << m_rules->size () << " of " << l_ruleNdLst.count () << " rules." << endl;
-        }
-
-        RuleSet* RuleSet::obtain ( const Node& p_ndRef ) {
-            RuleSet* l_rlst = NULL;
-
-            if ( s_rsm.find ( p_ndRef.locale ().toStdString ()) == s_rsm.end() ) {
-                l_rlst = new RuleSet ( p_ndRef.locale ().toStdString ());
-                s_rsm.insert ( RuleSetMap::value_type ( p_ndRef.locale ().toStdString () ,l_rlst ) );
-            } else
-                l_rlst = s_rsm.find ( p_ndRef.locale ().toStdString () )->second;
-
-            return l_rlst;
-        }
-
-        /// @todo This method needs to let other rules get a chance.
-        const Rule* RuleSet::getRuleFor ( const Node& p_nd ) const {
-            map<const double, const Rule*> l_rlVtr;
-            for ( RuleVector::const_iterator i = m_rules->begin (); i != m_rules->end (); i++ ) {
-                const Rule* l_rl = *i;
-                const double l_rt = l_rl->appliesFor (p_nd);
-                if ( l_rt > 0.0 || l_rt == 1.0 ){
-                    l_rlVtr.insert (map<const double,const Rule*>::value_type(l_rt,l_rl));
-                    qDebug() << "(ling) [RuleSet] Valid rule for '" << p_nd.symbol () << "'";
-                }
-            }
-
-            if (!l_rlVtr.empty ()){
-                map<const double,const Rule*>::const_iterator l_itr = l_rlVtr.begin ();
-                return (l_itr->second);
-            } else return NULL;
-        }
-
-        void RuleSet::setLocale(const string& p_lcl){
-            __init(p_lcl);
-        }
-
-        const Binding* RuleSet::getBindingFor ( const Node& p_nd, const Node& p_nd2 ) const {
-            const Rule* l_rl = getRuleFor ( p_nd );
-            if ( l_rl )
-                return l_rl->getBindingFor ( p_nd,p_nd2 );
-            else
-                return NULL;
-        }
-
-        const bool RuleSet::canBind ( const Node& p_nd, const Node& p_nd2 ) const {
-            return ( this->getBindingFor ( p_nd,p_nd2 ) != NULL );
-        }
-
-        const Link* RuleSet::bind ( const Node& p_nd, const Node& p_nd2 ) const {
-            const Binding* l_bnd = this->getBindingFor ( p_nd,p_nd2 );
-            if ( l_bnd )
-                return l_bnd->bind ( p_nd,p_nd2 );
-            else
-                return NULL;
-        }
-
-        const string RuleSet::locale() const {
-            return m_dom->documentElement ().attribute ( "locale" ).toStdString();
-        }
+        const string Rule::locale () const { return m_chn.locale().toStdString(); }
 
         Parser::Parser ( const string& p_lcl ) : m_lcl ( p_lcl ) { }
 
@@ -344,25 +236,24 @@ namespace Wintermute {
                 Lexical::DataFlagMap l_dtmp;
 
                 while (!l_ln.isNull() && !l_ln.isEmpty ()) {
-                    qDebug() << l_ln;
                     QStringList l_objs = l_ln.split (" ");
                     l_oid = l_objs[0];
                     l_flg = l_objs[1];
 
-                    l_dtmp.insert(&l_oid,&l_flg);
+                    l_dtmp.insert(l_oid,l_flg);
                     l_ln = l_iStrm.readLine ();
                 }
 
-                const Lexical::Data l_nwDt = Lexical::Data::createData (l_dt->id (),l_dt->locale (), l_dt->symbol (), l_dtmp);
-                SaveModel* l_svmdl = Storage::obtain (&l_nwDt);
-                l_svmdl->save ();
-                p_nd = new Node(*l_svmdl->data ());
-                qDebug() << "(ling) [Parser] Node generated.";
-            } else {
-                qDebug() << "(ling) [Parser] Node creation cancelled.";
-                p_nd = NULL;
-            }
-        }
+				Lexical::Data l_nwDt = Lexical::Data::createData(Lexical::Data::idFromString(p_nd->symbol()),
+								 QString::fromStdString(locale()), p_nd->symbol(), l_dtmp);
+				Lexical::Cache::write(l_nwDt);
+				p_nd = new Node(l_nwDt);
+				qDebug() << "(ling) [Parser] Node generated.";
+			} else {
+				qDebug() << "(ling) [Parser] Node creation cancelled.";
+				p_nd = NULL;
+			}
+		}
 
         /// @todo Allow a handle to be created here whenever it bumps into a foreign word.
         NodeVector Parser::formNodes ( QStringList const &p_tokens ) {
@@ -379,12 +270,12 @@ namespace Wintermute {
         /// @todo Add more information to how the Node is presented (like punctaction).
         /// @note An assumption is made here (that the QRegExp splits it into three parts). If someone were to enter "libro?!?"
         Node* Parser::formNode( QString const &p_symbol ){
-            const string l_theID = md5(p_symbol.toLower ().toStdString ());
+            const string l_theID = Lexical::Data::idFromString (p_symbol).toStdString();
             Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl,l_theID));
 
             if ( !Node::exists (m_lcl,l_theID) ) {
                 string l_sym(p_symbol.toStdString ());
-                l_theNode = const_cast<Node*>(Node::buildPseudo ( l_theID, m_lcl , l_sym ));
+                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl , l_sym ));
                 emit foundPseduoNode(l_theNode);
             }
 
@@ -396,25 +287,23 @@ namespace Wintermute {
         NodeTree Parser::expandNodes ( NodeTree& p_tree, const int& p_size, const int& p_level ) {
             // Salvaged this method's algorithm from an older version of the parser.
 
-            if ( p_level == p_tree.size () )
+            if ( p_level == p_tree.size () ){
+                qDebug() << "(ling) Flag unwinding complete.";
                 return ( NodeTree() );
+            }
 
-            qDebug() << "(ling) [Parser] Level " << p_level << " should generate " << p_size << " paths.";
             const NodeVector l_curBranch = p_tree.at ( p_level );
             const bool isAtEnd = ( p_level + 1 == p_tree.size () );
 
             if ( l_curBranch.empty () ) {
-                qDebug() << "(ling) [Parser] WARNING! Invalid level detected at level " << p_level << ".";
+                qDebug() << "(ling) [Parser] WARNING: Null data detected at level" << p_level << ".";
                 return ( NodeTree() );
             }
-
-            qDebug() << "(ling) [Parser] Level " << p_level << " has " << l_curBranch.size() << " variations.";
 
             const int l_mxSize = p_size / l_curBranch.size ( );
 
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
-            qDebug() << "(ling) [Parser] Level " << p_level << " expects " << l_foundStems.size() * l_curBranch.size () << " paths.";
             for ( NodeVector::ConstIterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
                 const Node* l_curLvlNd = * jtr;
 
@@ -431,7 +320,7 @@ namespace Wintermute {
                 }
             }
 
-            qDebug() << "(ling) [Parser] Level" << p_level << "generated" << l_chldBranches.size() << "branches.";
+            qDebug() << "(ling) [Parser] Tier" << (p_tree.size () - p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
             return l_chldBranches;
         }
 
@@ -443,14 +332,15 @@ namespace Wintermute {
                 const Node* l_nd = *itr;
                 NodeVector l_variations = Node::expand ( l_nd );
                 const unsigned int size = l_variations.size ();
-
+                Q_ASSERT(size >= 1);
                 if ( itr != p_ndVtr.begin() )
                     l_totalPaths *= size;
 
                 l_metaTree.push_back ( l_variations );
             }
 
-            qDebug() << "(ling) [Parser] Expanding across" << p_ndVtr.size () << "levels and expecting" << l_totalPaths << "different paths...";
+            qDebug() << "(ling) [Parser] Expecting" << l_totalPaths << "path(s).";
+
             emit unwindingProgress(0.0);
             NodeTree l_tree = expandNodes ( l_metaTree , l_totalPaths , 0 );
             emit unwindingProgress(1.0);
@@ -503,7 +393,7 @@ namespace Wintermute {
             MeaningVector l_meaningVtr;
             for ( NodeTree::const_iterator itr = l_nodeTree.begin (); itr != l_nodeTree.end (); itr++ ) {
                 const NodeVector l_ndVtr = *itr;
-                qDebug() << "(ling) [Parser] " << "Forming meaning #" << (l_meaningVtr.size () + 1) << "...";
+                qDebug() << "(ling) [Parser] Forming meaning #" << (l_meaningVtr.size () + 1) << "...";
                 Meaning* l_meaning = const_cast<Meaning*>(Meaning::form ( NULL, l_ndVtr ));
                 if (l_meaning != NULL)
                     l_meaningVtr.push_back ( l_meaning );
@@ -515,7 +405,7 @@ namespace Wintermute {
 
             for ( MeaningVector::const_iterator itr2 = l_meaningVtr.begin (); itr2 != l_meaningVtr.end (); itr2++ ) {
                 const Meaning* l_mngItr = *itr2;
-                qDebug() << l_mngItr->toText () << endl;
+                l_mngItr->toText ();
             }
 
             if (!l_meaningVtr.empty ()) return l_meaningVtr.front ();

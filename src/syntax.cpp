@@ -40,18 +40,18 @@ namespace Wintermute {
             QString sig;
             switch ( p_density ) {
             case MINIMAL:
-                sig = l_flgItr.key ()->at(0);
+                sig = l_flgItr.value ().at(0);
                 break;
 
             case EXTRA:
-                sig = *l_flgItr.value ();
+                sig = l_flgItr.value ();
                 break;
 
             default:
             case FULL:
-                sig = *l_flgItr.value ();
+                sig = l_flgItr.value ();
                 sig += "[";
-                sig += *l_flgItr.key();
+                sig += l_flgItr.key();
                 sig += "]";
                 break;
             }
@@ -75,51 +75,35 @@ namespace Wintermute {
         }
 
         const Node* Node::create( const Lexical::Data& p_lxdt ){
-            SaveModel* l_svmdl = Storage::obtain (&p_lxdt);
-            l_svmdl->save ();
+            Lexical::Cache::write (p_lxdt);
             return Node::obtain ( p_lxdt.locale ().toStdString (), p_lxdt.id ().toStdString () );
         }
 
         /// @bug Something funky is happening here.
         const Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
-            const Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+            Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
 
             if ( exists ( p_lcl , p_id ) ) {
-                LoadModel* l_ldmdl = Storage::obtain(&l_dt);
-                Lexical::Data* l_lxdt = l_ldmdl->load ();
-                Q_ASSERT(l_lxdt != NULL);
-                return new Node ( *l_lxdt );
-            } else
-                return NULL;
+                if (Lexical::Cache::read(l_dt))
+                    return new Node ( l_dt );
+            }
+
+            return NULL;
         }
 
-        /// @todo Generate a pseudo node according a language's rule.
-        const Node* Node::buildPseudo ( const string& p_id, const string& p_lcl, const string& p_sym ) {
-            Lexical::DataFlagMap l_map;
-            //Node::getPsuedo(p_lcl,&l_map);
-            l_map.insert ( new QString("-1"), new QString("Bz") );
-            return new Node ( Lexical::Data::createData ( QString::fromStdString (p_id), QString::fromStdString (p_lcl) ,
-                                                          QString::fromStdString (p_sym), l_map ) );
+        const Node* Node::buildPseudo ( const string& p_lcl, const string& p_sym ) {
+            Lexical::Data l_dt = Lexical::Data::createData (QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
+            Lexical::Cache::pseudo (l_dt);
+            return new Node ( l_dt );
         }
 
         const bool Node::exists ( const string& p_lcl, const string& p_id ) {
-            const Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
-            return Storage::exists ( &l_dt );
+            Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+            return Lexical::Cache::exists(l_dt);
         }
 
         const Node* Node::form ( const Lexical::Data l_dt ) {
             return new Node ( l_dt );
-        }
-
-        const Node* Node::form ( const Node* p_nd, const int& p_indx ) {
-            Lexical::DataFlagMap l_map = p_nd->flags ();
-            Lexical::DataFlagMap::ConstIterator itr = l_map.begin ();
-            for (int i = 0; i < p_indx; i++){ itr++; }
-            l_map.insert ( itr.key (), itr.value ());
-            return new Node ( ( Lexical::Data::createData ( p_nd->id(),
-                                      p_nd->locale(),
-                                      p_nd->symbol(),
-                                      l_map ) ) );
         }
 
         NodeVector Node::expand ( const Node* p_nd ) {
@@ -132,7 +116,8 @@ namespace Wintermute {
             for ( Lexical::DataFlagMap::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
                 Lexical::DataFlagMap l_mp;
                 l_mp.insert (itr.key (),itr.value ());
-                const Lexical::Data l_dt = Lexical::Data::createData (p_nd->id (),p_nd->locale (), p_nd->symbol (),l_mp);
+                Lexical::Data l_dt = Lexical::Data::createData (p_nd->id (),p_nd->locale (), p_nd->symbol ());
+                l_dt.setFlags (l_mp);
 
                 l_vtr.push_back ( const_cast<Node*>(Node::form(l_dt)) );
             }
@@ -176,12 +161,12 @@ namespace Wintermute {
         }
 
         QDebug operator<<(QDebug dbg, const Node* p_nd) {
-             dbg.nospace () << "[" << p_nd->symbol () << " (" << QString::fromStdString (p_nd->toString (Node::EXTRA)) << ")]";
+             dbg.nospace () << "[" << p_nd->symbol () << " (" << QString::fromStdString (p_nd->toString (Node::EXTRA)) << "):" << p_nd->locale ().toStdString ().c_str ()<< "]";
              return dbg.space();
         }
 
         QDebug operator<<(QDebug dbg, const Link* p_lnk) {
-             dbg.nospace () << "(type: '" << QString::fromStdString (p_lnk->flags ()) << "') "
+             dbg.nospace () << "(type:" << QString::fromStdString (p_lnk->flags ()) << ")"
                             << p_lnk->source () << "->" << p_lnk->destination ();
              return dbg.space();
         }

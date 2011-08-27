@@ -23,6 +23,11 @@
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+using namespace Wintermute::Linguistics;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -34,14 +39,14 @@ namespace Wintermute {
 
         /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
         const Meaning* Meaning::form ( LinkVector* p_lnkVtr, const NodeVector& p_ndVtr ) {
+            if (p_lnkVtr == NULL)
+                p_lnkVtr = new LinkVector;
+
             cout << endl << setw(20) << setfill('=') << " " << endl;
             NodeVector::ConstIterator l_ndItr = p_ndVtr.begin ();
             NodeVector l_ndVtr;
             QStringList* l_hideList = NULL;
             bool l_hideOther = false, l_hideThis = false;
-
-            qDebug() << "(ling) [Meaning] Current nodes being parsed: '" << endl
-                     << p_ndVtr << endl;
 
             if (p_ndVtr.size () != 1){
                 for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++ ) {
@@ -74,6 +79,7 @@ namespace Wintermute {
                     }
 
                     qDebug() << "(ling) [Meaning] Current node: " << l_nd;
+
                     const Binding* l_bnd = Binding::obtain ( *l_nd,*l_nd2 );
                     const Link* l_lnk;
                     if ( l_bnd ) {
@@ -123,7 +129,7 @@ namespace Wintermute {
                             l_hideList = l_e;
                             qDebug() << "(ling) [Meaning] *** Hiding any nodes that falls into the regex" << l_hideList->join (" 'or' ") << "on the next round.";
                         }
-    #if 0
+
                         qDebug() << "(ling) [Meaning] Flags> hide: (" << l_hide
                              << ") hideThis: ("   << ((l_hideThis == true) ? "yes" : "no")
                              << ") hideOther: ("  << ((l_hideOther == true) ? "yes" : "no")
@@ -132,18 +138,13 @@ namespace Wintermute {
                              << ") skipWord: ("   << l_skipWord
                              << ") hideList: ("   << ((l_hideList == NULL) ? "NULL" : "*") << ")"
                              << endl << "Link sig: " << l_lnk->toString ().c_str ()<< endl;
-    #endif
 
                     } else {
                         //qWarning() << "(ling) [Meaning] Linking failed ... horribly." << endl;
                         l_lnk = NULL;
                     }
-    #if 0
-                    qDebug() << endl << "(ling) [Meaning] Nodes to be queued:";
-                    for (int i = 0; i < l_ndVtr.size (); i++)
-                        qDebug() << l_ndVtr.at (i);
-                    qDebug() << "'" << endl << endl;
-    #endif
+
+                    //qDebug() << endl << "(ling) [Meaning] Nodes to be queued:" << endl << l_ndVtr << endl;
 
                 }
                 qDebug() << "(ling) [Meaning] Formed" << p_lnkVtr->size () << "links with" << l_ndVtr.size () << "nodes left to parse.";
@@ -163,7 +164,6 @@ namespace Wintermute {
         const LinkVector* Meaning::siblings () const { return &m_lnkVtr; }
 
         void Meaning::__init(){
-            unique(m_lnkVtr.begin (),m_lnkVtr.end ());
             m_ontoMap.clear();
 
             foreach (Link* l_lnk, m_lnkVtr){
