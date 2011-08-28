@@ -239,6 +239,8 @@ namespace Wintermute {
 
         /**
          * @brief Encapsulates the primary object used to cast a simple string representing a bit of language into machine-interpretable ontological information.
+         * @attention Using Big O notation, the parser avoids running into memory intenstive operations. The typical execution size is O(n1) * ...  * O(n(x)).
+         *            Typically words have only one to three definitions. But if a sentence has words with 6 different meangins and there's 40 words; things get hairy <b>fast</b>.
          * @class Parser parser.hpp "include/wntr/ling/parser.hpp"
          */
         class Parser : public QObject {
