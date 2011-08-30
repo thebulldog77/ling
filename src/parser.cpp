@@ -58,37 +58,37 @@ namespace Wintermute {
         }
 
         /// @todo This method needs to match with more precision.
-        const double Binding::canBind ( const Node &p_nd, const Node& p_nd2 ) const {
-            if ( this->parentRule ()->appliesFor ( p_nd ) == 0.0 )
+        const double Binding::canBind ( const Node &p_ndSrc, const Node& p_ndDst ) const {
+            if ( this->parentRule ()->appliesFor ( p_ndSrc ) == 0.0 )
                 return 0.0;
 
             const QString l_wh = m_bnd.attribute ( "with" );
-            const QString l_ndStr = QString::fromStdString (p_nd2.toString ( Node::EXTRA ));
+            const QString l_ndDestStr = QString::fromStdString (p_ndDst.toString ( Node::EXTRA ));
+            const QString l_ndSrcStr = QString::fromStdString (p_ndSrc.toString ( Node::EXTRA ));
             QStringList l_options = l_wh.split ( "," );
 
             foreach (const QString l_s, l_options) {
-                double l_rtn = Rules::Bond::matches(l_ndStr,l_wh);
+                double l_rtn = Rules::Bond::matches(l_ndDestStr,l_wh);
 
                 if (l_rtn > 0.0) {
                     if (m_bnd.hasAttribute ("typeHas")){
-                        qDebug() << "(ling) [Binding] Required type!" << endl;
-                        const QString l_hasTypeHas ( p_nd.toString ( Node::EXTRA ).c_str () );
                         const QString l_bindType = this->getAttrValue ( "typeHas" );
+                        const double l_min = ((double) l_bindType.length () / 100.0);
+                        const double l_matchVal = Rules::Bond::matches (l_ndSrcStr,l_bindType);
 
-                        if ( !l_bindType.isEmpty () ) {
-                            if ( ! l_bindType.contains ( l_hasTypeHas ) )
-                                l_rtn = 0.0;
+                        if ( l_min > l_matchVal ){
+                            l_rtn = 0.0;
+                            qDebug() << "(ling) [Binding] Required type:" << l_bindType << "in" << l_ndSrcStr << endl;
                         }
                     }
 
-                    qDebug() << "(ling) [Binding] Bond:"<< l_rtn * 100 << "% for" << p_nd.symbol () << "to" << p_nd2.symbol () << "via" << l_wh;
+                    qDebug() << "(ling) [Binding] Bond:"<< l_rtn * 100 << "% for" << p_ndSrc.symbol () << "to" << p_ndDst.symbol () << "via" << l_wh;
                     return l_rtn;
                 }
             }
 
-            qDebug() << m_bnd.attribute ("with");
             qDebug() << "(ling) [Binding] Binding failed for (src) -> (dst) :"
-                     << p_nd.toString (Node::EXTRA).c_str () << " -> " << l_ndStr.toStdString ().c_str () << " via" << l_wh;
+                     << p_ndSrc.toString (Node::EXTRA).c_str () << " -> " << l_ndDestStr.toStdString ().c_str () << " via" << l_wh;
 
             return 0.0;
         }
@@ -123,7 +123,7 @@ namespace Wintermute {
             }
 
             emit binded(this,&p_nd1,&p_nd2);
-            qDebug() << QString::fromStdString (m_rl->type ()) << m_bnd.with ();
+            qDebug() << "(ling) [Binding] Link formed:" << QString::fromStdString (m_rl->type ()) << m_bnd.with ();
             return Link::form ( *&l_nd, *&l_nd2 , l_type.toStdString () , l_lcl.toStdString () );
         }
 
