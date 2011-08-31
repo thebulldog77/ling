@@ -1,6 +1,6 @@
 /**
  * @file    syntax.hpp
- * @author  Jacky Alcine <jackyalcine@gmail.com>
+ * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
  * @date February 4, 2011, 12:07 AM
  * @license GPL3
  *

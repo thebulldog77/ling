@@ -1,6 +1,6 @@
 /**
  * @file    parser.hpp
- * @author  Jacky Alcine <jackyalcine@gmail.com>
+ * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
  * @date    June 14, 2011 11:34 PM
  * @license GPL3
  *

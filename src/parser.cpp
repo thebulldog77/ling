@@ -1,6 +1,6 @@
 /**
  * @file    parser.cpp
- * @author  Jacky Alcine <jackyalcine@gmail.com>
+ * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
  * @date    June 14, 2011, 11:34 PM
  * @license GPL3
  *
@@ -236,11 +236,14 @@ namespace Wintermute {
                 Lexical::DataFlagMap l_dtmp;
 
                 while (!l_ln.isNull() && !l_ln.isEmpty ()) {
-                    QStringList l_objs = l_ln.split (" ");
-                    l_oid = l_objs[0];
-                    l_flg = l_objs[1];
+                    if (l_ln != "*done*"){
+                        QStringList l_objs = l_ln.split (" ");
+                        l_oid = l_objs[0];
+                        l_flg = l_objs[1];
 
-                    l_dtmp.insert(l_oid,l_flg);
+                        l_dtmp.insert(l_oid,l_flg);
+                    } else break;
+
                     l_ln = l_iStrm.readLine ();
                 }
 

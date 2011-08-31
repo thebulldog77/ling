@@ -1,6 +1,6 @@
 /**
  * @file    meanings.cpp
- * @author  Jacky Alcine <jackyalcine@gmail.com>
+ * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
  * @date    August 20, 2011 8:58 PM
  * @license GPL3
  *
@@ -20,11 +20,12 @@
  * @endlegalese
  */
 
+#include <iomanip>
+#include <iostream>
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <iostream>
-#include <iomanip>
+#include <wntr/data/ontology.hpp>
 
 using namespace std;
 using namespace Wintermute::Linguistics;
@@ -37,7 +38,6 @@ namespace Wintermute {
 
         Meaning::Meaning(const Meaning &p_meaning) : m_lnkVtr(p_meaning.m_lnkVtr) { __init(); }
 
-        /// @todo Raise an exception and crash if this word is foreign OR have it be registered under a psuedo word OR implement a means of creating a new RuleSet.
         const Meaning* Meaning::form ( LinkVector* p_lnkVtr, const NodeVector& p_ndVtr ) {
             if (p_lnkVtr == NULL)
                 p_lnkVtr = new LinkVector;
@@ -68,13 +68,13 @@ namespace Wintermute {
                             if (l_k.contains (l_s)) l_b = true;
 
                         if (!l_b) {
-                            qDebug() << "(ling) [Meaning] *** This node broke the filter; may appear on next round." << endl;
+                            //qDebug() << "(ling) [Meaning] *** This node broke the filter; may appear on next round." << endl;
                             l_hideList = NULL;
                             l_hideThis = false;
                         }
                         else {
                             l_hideThis = true;
-                            qDebug() << "(ling) [Meaning] *** Node won't appear in next round due to filter '" << l_hideList->join (",") << "'." << endl;
+                            //qDebug() << "(ling) [Meaning] *** Node won't appear in next round due to filter '" << l_hideList->join (",") << "'." << endl;
                         }
                     }
 
@@ -99,20 +99,20 @@ namespace Wintermute {
                         if ( !l_hideThis && !l_hideOther && l_hide == "no" )
                             l_ndVtr.push_back ( const_cast<Node*>( dynamic_cast<const Node*> ( l_lnk->source () ) ) );
                         else {
-                            qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->source () << "' from appearing on the next pass of parsing.";
+                            //qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->source () << "' from appearing on the next pass of parsing.";
                         }
 
                         // Attribute 'hideNext': Prevents the next node (destination node) from appearing on its next round of parsing (2 rounds from now) (default = 'no')
                         if ( l_hideNext == "yes" ) {
                             l_hideOther = true;
-                            qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->destination () << "' from appearing on the next pass of parsing (2 rounds from now).";
+                            //qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->destination () << "' from appearing on the next pass of parsing (2 rounds from now).";
                         } else l_hideOther = false;
 
                         // Attribute 'skipWord': Doesn't allow the destination node to have a chance at being parsed. (default = yes)
                         if ( l_skipWord == "yes" )
                             l_ndItr++;
                         else {
-                            qDebug() << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination () << "'; will be parsed on next round.";
+                            //qDebug() << "(ling) [Meaning] *** Skipping prevented for word-symbol '" << l_lnk->destination () << "'; will be parsed on next round.";
                         }
 
 
@@ -127,9 +127,9 @@ namespace Wintermute {
                             } else l_e->append ( l_hideFilter );
 
                             l_hideList = l_e;
-                            qDebug() << "(ling) [Meaning] *** Hiding any nodes that falls into the regex" << l_hideList->join (" 'or' ") << "on the next round.";
+                            //qDebug() << "(ling) [Meaning] *** Hiding any nodes that falls into the regex" << l_hideList->join (" 'or' ") << "on the next round.";
                         }
-
+#if 0
                         qDebug() << "(ling) [Meaning] Flags> hide: (" << l_hide
                              << ") hideThis: ("   << ((l_hideThis == true) ? "yes" : "no")
                              << ") hideOther: ("  << ((l_hideOther == true) ? "yes" : "no")
@@ -137,7 +137,8 @@ namespace Wintermute {
                              << ") hideFilter: (" << l_hideFilter
                              << ") skipWord: ("   << l_skipWord
                              << ") hideList: ("   << ((l_hideList == NULL) ? "NULL" : "*") << ")"
-                             << endl << "Link sig: " << l_lnk->toString ().c_str ()<< endl;
+                             << endl << "Link sig: " << l_lnk->toString ().c_str () << endl;
+#endif
 
                     } else {
                         //qWarning() << "(ling) [Meaning] Linking failed ... horribly." << endl;

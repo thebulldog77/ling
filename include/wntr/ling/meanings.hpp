@@ -1,6 +1,6 @@
 /**
  * @file    meanings.hpp
- * @author  Jacky Alcine <jackyalcine@gmail.com>
+ * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
  * @date    August 20, 2011 8:54 PM
  * @license GPL3
  *
