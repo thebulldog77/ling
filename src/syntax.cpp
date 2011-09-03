@@ -63,10 +63,10 @@ namespace Wintermute {
             return p_nd->toString ( p_density );
         }
 
-        const string Node::toString ( const NodeVector& p_ndVtr, const FormatVerbosity& p_density ) {
+        const string Node::toString ( const NodeList& p_ndVtr, const FormatVerbosity& p_density ) {
             string sig;
 
-            for ( NodeVector::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
+            for ( NodeList::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
                 sig += ( *itr )->toString ( p_density );
 
                 if ( ( itr + 1 ) != p_ndVtr.end () )
@@ -106,8 +106,8 @@ namespace Wintermute {
             return new Node ( l_dt );
         }
 
-        NodeVector Node::expand ( const Node* p_nd ) {
-            NodeVector l_vtr;
+        NodeList Node::expand ( const Node* p_nd ) {
+            NodeList l_vtr;
             Lexical::DataFlagMap l_map;
             int l_indx = 0;
 

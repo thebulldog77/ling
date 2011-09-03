@@ -87,8 +87,7 @@ namespace Wintermute {
                 }
             }
 
-            qDebug() << "(ling) [Binding] Binding failed for (src) -> (dst) :"
-                     << p_ndSrc.toString (Node::EXTRA).c_str () << " -> " << l_ndDestStr.toStdString ().c_str () << " via" << l_wh;
+            //qDebug() << "(ling) [Binding] Binding failed for (src) -> (dst) :" << p_ndSrc.toString (Node::EXTRA).c_str () << " -> " << l_ndDestStr.toStdString ().c_str () << " via" << l_wh;
 
             return 0.0;
         }
@@ -106,7 +105,6 @@ namespace Wintermute {
 
             if (m_bnd.hasAttribute ("linkAction")){
                 const QStringList l_options = m_bnd.attribute ("linkAction").split (",");
-                qDebug() << l_options;
 
                 if (l_options.contains ("reverse")) {
                     l_type = QString::fromStdString (p_nd2.toString ( Node::MINIMAL )).at (0);
@@ -114,7 +112,6 @@ namespace Wintermute {
                     Node *l_tmp = l_nd;
                     l_nd = l_nd2;
                     l_nd2 = l_tmp;
-                    qDebug() << "(ling) [Binding] Reversed the type(" << l_type << ") and locale(" << l_lcl << ") of the link.";
                 } else if (l_options.contains ("othertype")){
                     l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
                 } else if (l_options.contains ("thistype")){
@@ -123,7 +120,7 @@ namespace Wintermute {
             }
 
             emit binded(this,&p_nd1,&p_nd2);
-            qDebug() << "(ling) [Binding] Link formed:" << QString::fromStdString (m_rl->type ()) << m_bnd.with ();
+            qDebug() << "(ling) [Binding] Link formed: " << p_nd1.toString (Node::EXTRA).c_str () << " " << p_nd2.toString (Node::EXTRA).c_str ();
             return Link::form ( *&l_nd, *&l_nd2 , l_type.toStdString () , l_lcl.toStdString () );
         }
 
@@ -173,7 +170,7 @@ namespace Wintermute {
             for ( BindingVector::const_iterator i = m_bndVtr.begin (); i != m_bndVtr.end (); i++ ) {
                 const Binding* l_bnd = *i;
                 const double l_vl = l_bnd->canBind ( p_nd,p_nd2 );
-                if ( l_vl > 0.0 || l_vl == 1.0 ){
+                if ( l_vl ){
                     l_bndLevel.insert (map<const double,const Binding*>::value_type(l_vl,l_bnd));
                     qDebug() << "(ling) [Rule] Valid binding for" << p_nd.symbol () << "to" << p_nd2.symbol ();
                 }
@@ -190,9 +187,6 @@ namespace Wintermute {
             const QString l_ndStr ( p_nd.toString ( Node::EXTRA ).c_str () );
             const QString l_rlStr ( type().c_str () );
             const double l_rtn = Rules::Bond::matches(l_ndStr,l_rlStr);
-
-            if (l_rtn != 0.0)
-                qDebug() << "(ling) [Rule] Bond:" << l_rtn * 100 << "% for " << p_nd.toString (Node::MINIMAL).c_str ();
 
             return l_rtn;
         }
@@ -231,19 +225,16 @@ namespace Wintermute {
 
             if (l_iStrm.readLine () == "yes"){
                 const Lexical::Data* l_dt = p_nd->data();
-                cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to quit." << endl;
+                cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to complete the flag entering process." << endl;
                 QString l_oid, l_flg, l_ln = l_iStrm.readLine ();
                 Lexical::DataFlagMap l_dtmp;
 
                 while (!l_ln.isNull() && !l_ln.isEmpty ()) {
-                    if (l_ln != "*done*"){
-                        QStringList l_objs = l_ln.split (" ");
-                        l_oid = l_objs[0];
-                        l_flg = l_objs[1];
+                    QStringList l_objs = l_ln.split (" ");
+                    l_oid = l_objs[0];
+                    l_flg = l_objs[1];
 
-                        l_dtmp.insert(l_oid,l_flg);
-                    } else break;
-
+                    l_dtmp.insert(l_oid,l_flg);
                     l_ln = l_iStrm.readLine ();
                 }
 
@@ -251,16 +242,16 @@ namespace Wintermute {
 								 QString::fromStdString(locale()), p_nd->symbol(), l_dtmp);
 				Lexical::Cache::write(l_nwDt);
 				p_nd = new Node(l_nwDt);
-				qDebug() << "(ling) [Parser] Node generated.";
+				qDebug() << "(ling) [Parser] Node generated." << endl;
 			} else {
-				qDebug() << "(ling) [Parser] Node creation cancelled.";
+				qDebug() << "(ling) [Parser] Node creation cancelled." << endl;
 				p_nd = NULL;
 			}
 		}
 
         /// @todo Allow a handle to be created here whenever it bumps into a foreign word.
-        NodeVector Parser::formNodes ( QStringList const &p_tokens ) {
-            NodeVector l_theNodes;
+        NodeList Parser::formNodes ( QStringList const &p_tokens ) {
+            NodeList l_theNodes;
             connect(this,SIGNAL(foundPseduoNode(Node*)), this,SLOT(generateNode(Node*)));
 
             foreach(QString l_token, p_tokens)
@@ -295,7 +286,7 @@ namespace Wintermute {
                 return ( NodeTree() );
             }
 
-            const NodeVector l_curBranch = p_tree.at ( p_level );
+            const NodeList l_curBranch = p_tree.at ( p_level );
             const bool isAtEnd = ( p_level + 1 == p_tree.size () );
 
             if ( l_curBranch.empty () ) {
@@ -307,17 +298,17 @@ namespace Wintermute {
 
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
-            for ( NodeVector::ConstIterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
+            for ( NodeList::ConstIterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
                 const Node* l_curLvlNd = * jtr;
 
                 if ( !isAtEnd ) {
                     for ( NodeTree::iterator itr = l_foundStems.begin ( ); itr != l_foundStems.end ( ); itr ++ ) {
-                        NodeVector l_tmpVector; // creates the current vector (1 of x, x = l_curBranch.size();
+                        NodeList l_tmpVector; // creates the current vector (1 of x, x = l_curBranch.size();
                         l_tmpVector << (const_cast<Node*>(l_curLvlNd)) << (*itr);
                         l_chldBranches.push_back ( l_tmpVector ); // add this current branch to list.
                     }
                 } else { // the end of the line!
-                    NodeVector tmpVector;
+                    NodeList tmpVector;
                     tmpVector << (const_cast<Node*>(l_curLvlNd));
                     l_chldBranches.push_back ( tmpVector ); // add this current branch to list.
                 }
@@ -327,13 +318,13 @@ namespace Wintermute {
             return l_chldBranches;
         }
 
-        NodeTree Parser::expandNodes ( NodeVector const &p_ndVtr ) {
+        NodeTree Parser::expandNodes ( NodeList const &p_ndVtr ) {
             int l_totalPaths = 1;
             NodeTree l_metaTree;
 
-            for ( NodeVector::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
+            for ( NodeList::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
                 const Node* l_nd = *itr;
-                NodeVector l_variations = Node::expand ( l_nd );
+                NodeList l_variations = Node::expand ( l_nd );
                 const unsigned int size = l_variations.size ();
                 Q_ASSERT(size >= 1);
                 if ( itr != p_ndVtr.begin() )
@@ -355,10 +346,10 @@ namespace Wintermute {
         }
 
         /// @todo Determine a means of generating unique signatures.
-        const string Parser::formShorthand ( const NodeVector& p_ndVtr, const Node::FormatVerbosity& p_sigVerb ) {
+        const string Parser::formShorthand ( const NodeList& p_ndVtr, const Node::FormatVerbosity& p_sigVerb ) {
             string l_ndShrthnd;
 
-            for ( NodeVector::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); ++itr ) {
+            for ( NodeList::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); ++itr ) {
                 const Node* l_nd = *itr;
                 l_ndShrthnd += l_nd->toString ( p_sigVerb );
             }
@@ -390,12 +381,12 @@ namespace Wintermute {
         /// @todo Obtain the one meaning that represents the entire parsed text.
         const Meaning* Parser::process ( const string& p_txt ) {
             QStringList l_tokens = getTokens ( p_txt );
-            NodeVector l_theNodes = formNodes ( l_tokens );
+            NodeList l_theNodes = formNodes ( l_tokens );
             NodeTree l_nodeTree = expandNodes ( l_theNodes );
 
             MeaningVector l_meaningVtr;
             for ( NodeTree::const_iterator itr = l_nodeTree.begin (); itr != l_nodeTree.end (); itr++ ) {
-                const NodeVector l_ndVtr = *itr;
+                const NodeList l_ndVtr = *itr;
                 qDebug() << "(ling) [Parser] Forming meaning #" << (l_meaningVtr.size () + 1) << "...";
                 Meaning* l_meaning = const_cast<Meaning*>(Meaning::form ( NULL, l_ndVtr ));
                 if (l_meaning != NULL)

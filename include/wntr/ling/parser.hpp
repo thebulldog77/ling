@@ -45,7 +45,7 @@ namespace Wintermute {
          * @brief Represents a vector of vector of nodes.
          * @typedef NodeTree
          */
-        typedef QList<NodeVector> NodeTree;
+        typedef QList<NodeList> NodeTree;
 
         /**
          * @brief Represents a collection of meanings.
@@ -316,13 +316,13 @@ namespace Wintermute {
                  * @fn formNodes
                  * @param
                  */
-                NodeVector formNodes ( QStringList const & );
+                NodeList formNodes ( QStringList const & );
                 /**
                  * @brief
                  * @fn expandNodes
                  * @param
                  */
-                NodeTree expandNodes ( NodeVector const & );
+                NodeTree expandNodes ( NodeList const & );
                 /**
                  * @brief
                  * @fn expandNodes
@@ -336,14 +336,14 @@ namespace Wintermute {
                  * @fn formMeaning
                  * @param
                  */
-                const Meaning formMeaning ( const NodeVector& );
+                const Meaning formMeaning ( const NodeList& );
                 /**
                  * @brief
                  * @fn formShorthand
                  * @param
                  * @param
                  */
-                static const string formShorthand ( const NodeVector& , const Node::FormatVerbosity& = Node::FULL );
+                static const string formShorthand ( const NodeList& , const Node::FormatVerbosity& = Node::FULL );
 
             private slots:
                 void generateNode(Node*);
@@ -386,4 +386,4 @@ Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
 
 
 #endif /* __PARSER_HPP__ */
-// kate: indent-mode cstyle; space-indent on; indent-width 4;
+// kate: indent-mode cstyle; space-indent on; indent-width 0;
