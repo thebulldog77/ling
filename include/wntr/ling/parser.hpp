@@ -361,7 +361,7 @@ namespace Wintermute {
         class Parser : public QObject {
             Q_OBJECT
 
-            Q_PROPERTY(string locale READ locale WRITE setLocale)
+            Q_PROPERTY(const QString locale READ locale WRITE setLocale)
 
             public:
                 /**
@@ -376,7 +376,7 @@ namespace Wintermute {
                  * @fn Parser
                  * @param
                  */
-                Parser ( const string& = Wintermute::Data::Linguistics::Configuration::locale ()  );
+                Parser ( const QString& = Wintermute::Data::Linguistics::Configuration::locale ()  );
 
                 /**
                  * @brief
@@ -388,24 +388,24 @@ namespace Wintermute {
                  * @brief
                  * @fn locale
                  */
-                const string locale() const;
+                const QString locale() const;
 
                 /**
                  * @brief
                  * @fn setLocale
                  * @param
                  */
-                void setLocale ( const string& = Wintermute::Data::Linguistics::Configuration::locale ());
+                void setLocale ( const QString& = Wintermute::Data::Linguistics::Configuration::locale ());
 
                 /**
                  * @brief
                  * @fn parse
                  * @param
                  */
-                void parse ( const string& );
+                void parse ( const QString& );
 
             protected:
-                mutable string m_lcl;
+                mutable QString m_lcl;
 
             private:
                 /**

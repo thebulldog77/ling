@@ -287,20 +287,20 @@ namespace Wintermute {
 
         const string Rule::locale () const { return m_chn.locale().toStdString(); }
 
-        Parser::Parser ( const string& p_lcl ) : m_lcl ( p_lcl ) { }
+        Parser::Parser ( const QString& p_lcl ) : m_lcl ( p_lcl ) { }
 
-        const string Parser::locale () const {
+        const QString Parser::locale () const {
             return m_lcl;
         }
 
-        void Parser::setLocale ( const string& p_lcl ) {
+        void Parser::setLocale ( const QString& p_lcl ) {
             m_lcl = p_lcl;
         }
 
         QStringList Parser::getTokens ( const string &p_str ) {
             QStringList l_strLst;
             foreach(const Token* l_tkn, Token::form(QString::fromStdString(p_str))){
-                const QString l_fullSuffix = Lexical::Cache::obtainFullSuffix(QString::fromStdString (locale()),l_tkn->suffix());
+                const QString l_fullSuffix = Lexical::Cache::obtainFullSuffix(locale(),l_tkn->suffix());
                 l_strLst << l_tkn->symbol();
 
                 if (!l_fullSuffix.isEmpty())
@@ -334,7 +334,7 @@ namespace Wintermute {
                 }
 
 				Lexical::Data l_nwDt = Lexical::Data::createData(Lexical::Data::idFromString(p_nd->symbol()),
-								 QString::fromStdString(locale()), p_nd->symbol(), l_dtmp);
+								 locale(), p_nd->symbol(), l_dtmp);
 				Lexical::Cache::write(l_nwDt);
 				p_nd = new Node(l_nwDt);
 				qDebug() << "(ling) [Parser] Node generated." << endl;
@@ -359,11 +359,11 @@ namespace Wintermute {
         /// @note An assumption is made here (that the QRegExp splits it into three parts). If someone were to enter "libro?!?"
         Node* Parser::formNode( const QString &p_symbol ){
             const string l_theID = Lexical::Data::idFromString (p_symbol).toStdString();
-            Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl,l_theID));
+            Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl.toStdString(),l_theID));
 
-            if ( !Node::exists (m_lcl,l_theID) ) {
+            if ( !Node::exists (m_lcl.toStdString(),l_theID) ) {
                 string l_sym(p_symbol.toStdString ());
-                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl , l_sym ));
+                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl.toStdString() , l_sym ));
                 emit foundPseduoNode(l_theNode);
             }
 
@@ -452,8 +452,8 @@ namespace Wintermute {
         }
 
         /// @todo When parsing multiple sentences back-to-back; we need to implement a means of maintaining context.
-        void Parser::parse ( const string& p_txt ) {
-            QTextStream l_strm(p_txt.c_str (),QIODevice::ReadOnly);
+        void Parser::parse ( const QString& p_txt ) {
+            QTextStream l_strm(p_txt.toLocal8Bit (),QIODevice::ReadOnly);
             MeaningList l_mngVtr;
 
             while (!l_strm.atEnd ()){
