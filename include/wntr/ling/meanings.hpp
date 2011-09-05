@@ -125,6 +125,19 @@ namespace Wintermute {
             const QString toText() const;
 
             /**
+             * @brief Obtains the number of levels in a Meaning.
+             * @fn levels
+             */
+            const int levels() const;
+
+            /**
+             * @brief Obtains the Link objects at a certain level.
+             * @fn linksAt
+             * @param p_lvl The level to get the Link objects at.
+             */
+            const LinkList linksAt(const int& = 1);
+
+            /**
              * @brief Obtains a LinkList of Link objects that of which the specified Node is the source.
              * @fn isLinkedTo
              * @param p_node The Node in question.
@@ -160,4 +173,4 @@ namespace Wintermute {
 #endif
 
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Meaning)
-// kate: indent-mode cstyle; space-indent on; indent-width 0;
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

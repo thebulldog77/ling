@@ -355,12 +355,14 @@ namespace Wintermute {
          * @internal
          */
         class Link : public QObject {
+            friend class Meaning;
             Q_OBJECT
-            Q_PROPERTY(const Node* source READ source)
-            Q_PROPERTY(const Node* destination READ destination)
-            Q_PROPERTY(const string locale READ locale)
-            Q_PROPERTY(const string flags READ flags)
-            Q_PROPERTY(const string value READ toString)
+            Q_PROPERTY(const Node* Source READ source)
+            Q_PROPERTY(const Node* Destination READ destination)
+            Q_PROPERTY(const string Locale READ locale)
+            Q_PROPERTY(const string Flags READ flags)
+            Q_PROPERTY(const string Value READ toString)
+            Q_PROPERTY(const int Level READ level)
 
             public:
                 /**
@@ -397,18 +399,22 @@ namespace Wintermute {
                  * @fn source
                  * @return A Node representing the source of the Link.
                  */
-                Q_INVOKABLE inline const Node* source() const {
-                    return m_src;
-                }
+                Q_INVOKABLE inline const Node* source() const { return m_src; }
 
                 /**
                  * @brief Obtains the destination Node.
                  * @fn destination
                  * @return A Node representing the destination of the Link.
                  */
-                Q_INVOKABLE inline const Node* destination() const {
-                    return m_dst;
-                }
+                Q_INVOKABLE inline const Node* destination() const { return m_dst; }
+
+                /**
+                 * @brief
+                 *
+                 * @fn level
+                 * @return const int
+                 */
+                Q_INVOKABLE inline const int level() const { return m_lvl; }
 
                 /**
                  * @brief Obtains the locale of the Link.
@@ -417,18 +423,14 @@ namespace Wintermute {
                  * @deprecated This method, as long with the concept of locale for Links, are phasing out.
                  * @obsolete
                  */
-                Q_INVOKABLE inline const string locale() const {
-                    return m_lcl;
-                }
+                Q_INVOKABLE inline const string locale() const { return m_lcl; }
 
                 /**
                  * @brief Obtains the flags of the Link.
                  * @fn flags
                  * @return The flags describing the relationship of this Link.
                  */
-                Q_INVOKABLE inline const string flags() const {
-                    return m_flgs;
-                }
+                Q_INVOKABLE inline const string flags() const { return m_flgs; }
 
                 /**
                  * @brief Obtains a QString that represents this Link.
@@ -440,14 +442,14 @@ namespace Wintermute {
                  * @brief Null constructor.
                  * @fn Link
                  */
-                Link() : m_lcl(""), m_flgs(""), m_src(NULL), m_dst(NULL) { }
+                Link() : m_lcl(""), m_flgs(""), m_src(NULL), m_dst(NULL), m_lvl(0) { }
 
                 /**
                  * @brief Copy constructor.
                  * @fn Link
                  * @param p_lnk The Link to be copied.
                  */
-                Link(const Link& p_lnk ) : m_src(p_lnk.m_src), m_dst(p_lnk.m_dst), m_flgs(p_lnk.m_flgs), m_lcl(p_lnk.m_lcl) { }
+                Link( const Link& p_lnk ) : m_src(p_lnk.m_src), m_dst(p_lnk.m_dst), m_flgs(p_lnk.m_flgs), m_lcl(p_lnk.m_lcl), m_lvl(0) { }
 
             protected:
                 /**
@@ -459,9 +461,10 @@ namespace Wintermute {
                  * @param p_lcl The locale of the flag.
                  */
                 Link ( const Node* p_src, const Node* p_dst, const string& p_flgs, const string& p_lcl ) :
-                        m_src ( p_src ),m_dst ( p_dst ), m_flgs ( p_flgs ), m_lcl ( p_lcl ) { }
+                        m_src ( p_src ),m_dst ( p_dst ), m_flgs ( p_flgs ), m_lcl ( p_lcl ), m_lvl(0) { }
 
             private:
+                mutable int m_lvl;
                 const Node* m_src;
                 const Node* m_dst;
                 const string m_flgs;
@@ -491,4 +494,4 @@ Q_DECLARE_METATYPE(Wintermute::Linguistics::Node)
 
 #endif	/* __SYNTAX_HPP */
 
-// kate: indent-mode cstyle; space-indent on; indent-width 0;
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

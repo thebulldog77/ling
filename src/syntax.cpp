@@ -166,7 +166,7 @@ namespace Wintermute {
         }
 
         QDebug operator<<(QDebug dbg, const Link* p_lnk) {
-             dbg.nospace () << "(type:" << QString::fromStdString (p_lnk->flags ()) << ")"
+             dbg.nospace () << "[Level " << p_lnk->level() << "](type:" << QString::fromStdString (p_lnk->flags ()) << ")"
                             << p_lnk->source () << "->" << p_lnk->destination ();
              return dbg.space();
         }

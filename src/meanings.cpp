@@ -79,7 +79,11 @@ namespace Wintermute {
                         if ( ( l_ndItr + 1 ) != p_ndVtr.end () ) {
                             l_nd =  ( * ( l_ndItr ) );
                             l_nd2 = ( * ( l_ndItr + 1 ) );
-                        } else break;
+                        } else {
+                            if (l_ndVtr.size () == 1)
+                                l_ndVtr.push_back (*l_ndItr);
+                            break;
+                        }
                     }
 
                     if (l_hideList) {
@@ -105,6 +109,7 @@ namespace Wintermute {
                     const Link* l_lnk;
                     if ( l_bnd ) {
                         l_lnk = l_bnd->bind ( *l_nd,*l_nd2 );
+                        l_lnk->m_lvl = Meaning::s_cnt;
                         p_lnkVtr->push_back ( const_cast<Link*>(l_lnk) );
 
                         QString l_hide = l_bnd->getAttrValue("hide");
@@ -173,8 +178,10 @@ namespace Wintermute {
             }
 
             if ( !p_lnkVtr->empty () ) {
-                if ( ! ( p_lnkVtr->size () >= 1) || l_ndVtr.size () > 0 )
+                if ( ! ( p_lnkVtr->size () >= 1) || l_ndVtr.size () > 0 ){
+                    Q_ASSERT(Meaning::s_cnt < 5);
                     return Meaning::form ( &*p_lnkVtr, l_ndVtr );
+                }
                 else {
                     Meaning::s_cnt = 0;
                     return new Meaning ( *p_lnkVtr );
@@ -189,6 +196,34 @@ namespace Wintermute {
 
         const LinkList* Meaning::siblings () const {
             return &m_lnkVtr;
+        }
+
+        const LinkList Meaning::linksAt(const int& p_lvl){
+            LinkList l_lnkVtr;
+
+            if (p_lvl > 1 && p_lvl <= levels()){
+                foreach (Link* l_lnk, m_lnkVtr){
+                    if (l_lnk->level() == p_lvl)
+                        l_lnkVtr << l_lnk;
+                    else continue;
+                }
+            } else {
+                qDebug() << "(ling) [Meaning] Out of level range.";
+            }
+
+            return l_lnkVtr;
+        }
+
+        const int Meaning::levels() const {
+            int l_lvl = 0;
+
+            foreach (const Link* l_lnk, m_lnkVtr){
+                if (l_lvl < l_lnk->level())
+                    l_lvl = l_lnk->level();
+                else continue;
+            }
+
+            return l_lvl;
         }
 
         const LinkList Meaning::isLinkedTo(const Node& p_nd) const {
@@ -214,10 +249,13 @@ namespace Wintermute {
         }
 
         const QString Meaning::toText () const {
-            qDebug() << "(ling) [Meaning] Has" << m_lnkVtr.size () << "link(s).";
-
-            foreach (const Link* l_lnk, m_lnkVtr)
-                qDebug() << "(ling) [Meaning]" << l_lnk;
+            if (levels() >= 2){
+                qDebug() << "(ling) [Meaning] Has" << m_lnkVtr.size () << "link(s).";
+                foreach (const Link* l_lnk, m_lnkVtr)
+                    qDebug() << "(ling) [Meaning]" << l_lnk;
+            } else {
+                qDebug() << "(ling) [Meaning] Invalid meaning.";
+            }
 
             return QString::null;
         }
@@ -225,4 +263,4 @@ namespace Wintermute {
         Meaning::~Meaning () { }
     }
 }
-// kate: indent-mode cstyle; space-indent on; indent-width 0;
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

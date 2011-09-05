@@ -32,7 +32,7 @@ include(WinterMacros)
 
 find_package(WntrData REQUIRED)
 find_package(PythonLibs REQUIRED)
-find_package(Boost 1.4 COMPONENTS
+find_package(Boost 1.42 COMPONENTS
     python
     REQUIRED)
 
@@ -61,8 +61,8 @@ set(WNTRLING_LIBRARIES "${WNTRDATA_LIBRARIES}"
 include_directories(${WNTRLING_INCLUDE_DIRS}
     "include/wntr/ling")
 
-file(GLOB WNTRLING_SHPP include/wntr/ling/*.hpp)
-file(GLOB WNTRLING_SCPP src/*.cpp)
+file(GLOB WNTRLING_SHPP "include/wntr/ling/*.hpp")
+file(GLOB WNTRLING_SCPP "src/*.cpp")
 file(GLOB CMAKE_MODULES "${PROJECT_SOURCE_DIR}/cmake/Modules/*.cmake")
 
 QT4_WRAP_CPP(MOC_CODE "${WNTRLING_SHPP}")

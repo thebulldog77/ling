@@ -40,31 +40,146 @@ namespace Wintermute {
         struct Parser;
         struct Binding;
         struct Meaning;
+        struct Token;
 
         /**
-         * @brief Represents a vector of vector of nodes.
+         * @brief Represents a QList of NodeList objects.
+         * @see Parser::expandNodes()
          * @typedef NodeTree
          */
         typedef QList<NodeList> NodeTree;
 
         /**
-         * @brief Represents a collection of meanings.
+         * @brief Represents a QList of Meaning objects.
+         * @see Meaning
          * @typedef MeaningVector
          */
-        typedef QList<Meaning*> MeaningVector;
+        typedef QList<Meaning*> MeaningList;
 
         /**
-         * @brief
+         * @brief Represents a QList of Rule objects.
+         * @see Rule
          * @typedef RuleList
          */
-        typedef QList<Rule*> RuleVector;
+        typedef QList<Rule*> RuleList;
 
         /**
-         * @brief
-         *
+         * @brief Represents a QList of Binding objects.
+         * @see Binding
          * @typedef BindingVector
          */
-        typedef QList<Binding*> BindingVector;
+        typedef QList<Binding*> BindingList;
+
+        /**
+         * @brief Represents a QList of Token objects.
+         * @see Token
+         * @typedef TokenList
+         */
+        typedef QList<Token*> TokenList;
+
+        /**
+         * @brief A wrapper class over word-symbols for use of the Parser.
+         *
+         * Token objects are used by the Parser to generate more accurate
+         * interpretations of text. Originally, the Parser would break up text
+         * whenever it saw a space, and dropped all other formatting characters.
+         * With Token::form(), it can generate a list of tokens that would have a
+         * English sentence like
+         * @code
+         * My name's Tom.
+         * @endcode
+         * or even a French sentence, like
+         * @code
+         * Je m'appelle Tom.
+         * @endcode
+         * converted into sentenes with approriate linkings as shown.
+         *
+         * @dot
+            digraph L {
+                    graph [layout=dot rankdir=LR]
+
+                    My
+                    {"name's"} -> {name "'" s}
+                    {"Tom."} -> {Tom "."}
+                    My -> {"name's"} -> {"Tom."}
+            }
+         * @enddot
+         * @dot
+            digraph K {
+                    graph [layout=dot rankdir=LR]
+
+                    Je
+                    {"m'appelle"} -> {m "'" appelle}
+                    {"Tom."} -> {Tom "."}
+                    Je -> {"m'appelle"} -> {"Tom."}
+            }
+         * @enddot
+         * The Parser can then expand these tokens into their proper Node forms.
+         * @internal
+         * @class Token parser.hpp "include/wntr/ling/parser.hpp"
+         */
+        class Token : public QObject {
+            Q_OBJECT
+
+            public:
+                /**
+                 * @brief
+                 *
+                 * @fn Token
+                 */
+                Token();
+
+                /**
+                 * @brief
+                 *
+                 * @fn Token
+                 * @param
+                 */
+                Token(const Token&);
+
+                /**
+                 * @brief
+                 *
+                 * @fn Token
+                 * @param
+                 */
+                Token(const QString&);
+
+                /**
+                 * @brief
+                 *
+                 * @fn symbol
+                 */
+                const QString symbol() const;
+
+                /**
+                 * @brief
+                 *
+                 * @fn prefix
+                 */
+                const QString prefix() const;
+
+                /**
+                 * @brief
+                 *
+                 * @fn suffix
+                 */
+                const QString suffix() const;
+
+                /**
+                 * @brief
+                 *
+                 * @fn form
+                 * @param
+                 */
+                static const TokenList form(const QString& );
+
+            private:
+                void __init(const QString&);
+                QString m_prfx;
+                QString m_sffx;
+                QString m_data;
+        };
 
         /**
          * @brief Represents the potential connection of words by a specified rule as defined by its parent rule.
@@ -234,7 +349,7 @@ namespace Wintermute {
             private:
                 void __init();
                 Rules::Chain m_chn;
-                BindingVector m_bndVtr;
+                BindingList m_bndVtr;
         };
 
         /**
@@ -386,4 +501,4 @@ Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
 
 
 #endif /* __PARSER_HPP__ */
-// kate: indent-mode cstyle; space-indent on; indent-width 0;
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

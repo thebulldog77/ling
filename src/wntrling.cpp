@@ -2,7 +2,7 @@
  * wntrling.cpp
  * This file is part of Wintermute Linguistics
  *
- * Copyright (C) 2011 - Jacky Alcine
+ * Copyright (C) 2011 - Wintermute Developers <wintermute-devel@lists.launchpad.net>
  *
  * Wintermute Linguistics is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
