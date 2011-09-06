@@ -25,7 +25,7 @@
 
 #include <QObject>
 #include <QMultiMap>
-#include <syntax.hpp>
+#include "syntax.hpp"
 
 namespace Wintermute {
     namespace Linguistics {
