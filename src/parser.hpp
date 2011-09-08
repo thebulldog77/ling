@@ -28,7 +28,7 @@
 #include <QString>
 #include <QStringList>
 #include <wntr/data/models.hpp>
-#include <syntax.hpp>
+#include "syntax.hpp"
 
 using namespace std;
 

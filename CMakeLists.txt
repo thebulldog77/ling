@@ -1,43 +1,19 @@
 cmake_minimum_required(VERSION 2.8)
 project(WntrLing)
 
-set(MOC_CODE )
 set(WNTRLING_MAJOR_VERSION 0)
 set(WNTRLING_MINOR_VERSION 0)
 set(WNTRLING_MICRO_VERSION 1)
 set(WNTRLING_VERSION
     ${WNTRLING_MAJOR_VERSION}.${WNTRLING_MINOR_VERSION}${WNTRLING_MICRO_VERSION})
 
-## Let's allow to choose the installation dirs.
-set(LIB_INSTALL_DIR lib CACHE PATH "Installation dir for libraries")
-set(INCLUDE_INSTALL_DIR include/wntr/ling CACHE PATH
-    "Installation dir for headers")
-set(DATA_INSTALL_DIR share CACHE PATH
-    "Installation dir for data")
-
-## Here we turn relative paths to absolute.
-foreach(p LIB INCLUDE DATA)
-    SET(var ${p}_INSTALL_DIR)
-    IF(NOT IS_ABSOLUTE "${${var}}")
-        set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-    endif()
-endforeach()
-
 ## Packages
-include(FindQt4)
-include(FindBoost)
-include(FindPythonLibs)
-include(WinterDefaults)
-include(WinterLibsDependencies)
-include(WinterMacros)
-
 find_package(WntrData REQUIRED)
 find_package(PythonLibs REQUIRED)
 find_package(Boost 1.42 COMPONENTS
     python
     REQUIRED)
-
-find_package(Qt4 4.4.3 COMPONENTS
+find_package(Qt4 4.6.3 COMPONENTS
     QtCore
     QtDBus
     QT_DONT_USE_GUI
@@ -46,16 +22,19 @@ find_package(Qt4 4.4.3 COMPONENTS
 ## Includes
 include("${QT_USE_FILE}")
 
+set(WNTRLING_INCLUDE_DIR "include/wntr/ling" CACHE PATH "Includes directory.")
+set(WNTRLING_LIB_DIR "lib" CACHE PATH "Libraries directory.")
 
-set(WNTRLING_INCLUDE_DIR "${WINTER_INCLUDE_INSTALL_DIR}/wntr/ling" CACHE PATH "Includes dir.")
-set(WNTRLING_LIB_DIR "${WINTER_LIB_INSTALL_DIR}" CACHE PATH "Libraries dir.")
 set(WNTRLING_INCLUDE_DIRS "${WNTRLING_INCLUDE_DIR}"
     ${WNTRDATA_INCLUDE_DIRS}
     ${PYTHON_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIR}
-    ${QT_INCLUDE_DIR})
-set(WNTRLING_CMAKE_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/WntrLing" CACHE PATH "CMake dir.")
-set(WNTRLING_LIBRARIES "${WNTRDATA_LIBRARIES}"
+    ${Boost_INCLUDE_DIRS}
+    ${QT_INCLUDE_DIRS})
+
+set(WNTRLING_CMAKE_DIR "share/cmake/WntrLing" CACHE PATH "CMake directory.")
+
+set(WNTRLING_LIBRARIES 
+    ${WNTRDATA_LIBRARIES}
     ${PYTHON_LIBRARIES}
     ${QT_LIBRARIES}
     ${Boost_LIBRARIES})
@@ -71,9 +50,7 @@ file(GLOB CMAKE_MODULES "${PROJECT_SOURCE_DIR}/cmake/Modules/*.cmake")
 
 QT4_WRAP_CPP(MOC_CODE "${WNTRLING_SHPP}")
 
-#
-# Targets
-#
+## Targets
 add_library(wntrling
     SHARED
     ${WNTRLING_SHPP}
@@ -86,10 +63,7 @@ set_target_properties(wntrling PROPERTIES
 
 target_link_libraries(wntrling ${WNTRLING_LIBRARIES})
 
-#
-# Configs
-#
-
+## Configs
 configure_file("cmake/WntrLingConfig.cmake.in"
     "${PROJECT_BINARY_DIR}/InstallFiles/WntrLingConfig.cmake" @ONLY)
 
@@ -99,26 +73,13 @@ configure_file("cmake/WntrLingConfigVersion.cmake.in"
 configure_file("${PROJECT_SOURCE_DIR}/wntrling.pc.in"
    "${PROJECT_BINARY_DIR}/InstallFiles/wntrling.pc" @ONLY)
 
-#
-# Installs
-#
-install(TARGETS wntrling
-    EXPORT WntrLingLibraryDepends
-    LIBRARY DESTINATION "${WNTRLING_LIB_DIR}")
+add_subdirectory(src)
 
-install(EXPORT WntrLingLibraryDepends
-    DESTINATION "${WNTRLING_CMAKE_DIR}")
-
+## Installs
 install(FILES
     "${PROJECT_BINARY_DIR}/InstallFiles/WntrLingConfig.cmake"
     "${PROJECT_BINARY_DIR}/InstallFiles/WntrLingConfigVersion.cmake"
     DESTINATION "${WNTRLING_CMAKE_DIR}")
 
-install(FILES ${WNTRLING_SHPP}
-    DESTINATION "${WNTRLING_INCLUDE_DIR}")
-
-install(FILES ${CMAKE_MODULES}
-    DESTINATION "${CMAKE_MODULE_DIR}")
-
 install(FILES "${PROJECT_BINARY_DIR}/InstallFiles/wntrling.pc"
-    DESTINATION "${WINTER_LIB_INSTALL_DIR}/pkgconfig/")
+    DESTINATION "${WNTRLING_LIB_DIR}/pkgconfig/")
