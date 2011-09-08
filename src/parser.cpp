@@ -216,8 +216,8 @@ namespace Wintermute {
         Rule::Rule(const Rules::Chain &p_chn) : m_chn(p_chn) { __init(); }
 
         void Rule::__init() {
-            foreach (Rules::Bond* l_bnd, m_chn.bonds())
-                m_bndVtr.push_back ((new Binding(*&*l_bnd,this)));
+            foreach (Rules::Bond l_bnd, m_chn.bonds())
+                m_bndVtr.push_back ((new Binding(l_bnd,this)));
         }
 
         const Rule* Rule::obtain ( const Node& p_nd ) {
@@ -322,7 +322,7 @@ namespace Wintermute {
                 const Lexical::Data* l_dt = p_nd->data();
                 cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to complete the flag entering process." << endl;
                 QString l_oid, l_flg, l_ln = l_iStrm.readLine ();
-                Lexical::DataFlagMap l_dtmp;
+                Lexical::FlagMapping l_dtmp;
 
                 while (!l_ln.isNull() && !l_ln.isEmpty ()) {
                     QStringList l_objs = l_ln.split (" ");
@@ -348,15 +348,15 @@ namespace Wintermute {
             NodeList l_theNodes;
             //connect(this,SIGNAL(foundPseduoNode(Node*)), this,SLOT(generateNode(Node*)));
 
-            foreach(QString l_token, p_tokens)
-                l_theNodes.push_back(formNode(l_token));
+            foreach(QString l_token, p_tokens){
+                Node* l_node = formNode(l_token);
+                l_theNodes.push_back(l_node);
+            }
 
             //disconnect(this,SLOT(generateNode(Node*)));
             return l_theNodes;
         }
 
-        /// @todo Add more information to how the Node is presented (like punctaction).
-        /// @note An assumption is made here (that the QRegExp splits it into three parts). If someone were to enter "libro?!?"
         Node* Parser::formNode( const QString &p_symbol ){
             const string l_theID = Lexical::Data::idFromString (p_symbol).toStdString();
             Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl.toStdString(),l_theID));
@@ -383,30 +383,27 @@ namespace Wintermute {
             const NodeList l_curBranch = p_tree.at ( p_level );
             const bool isAtEnd = ( p_level + 1 == p_tree.size () );
 
-            if ( l_curBranch.empty () ) {
+            if ( l_curBranch.isEmpty () ) {
                 qDebug() << "(ling) [Parser] WARNING: Null data detected at level" << p_level << ".";
                 return ( NodeTree() );
             }
 
             const int l_mxSize = p_size / l_curBranch.size ( );
-
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
-            for ( NodeList::ConstIterator jtr = l_curBranch.begin ( ); jtr != l_curBranch.end ( ); jtr ++ ) {
-                const Node* l_curLvlNd = * jtr;
-
+           foreach (Node* l_curLvlNd, l_curBranch){
                 if ( !isAtEnd ) {
-                    for ( NodeTree::iterator itr = l_foundStems.begin ( ); itr != l_foundStems.end ( ); itr ++ ) {
-                        NodeList l_tmpVector; // creates the current vector (1 of x, x = l_curBranch.size();
-                        l_tmpVector << (const_cast<Node*>(l_curLvlNd)) << (*itr);
-                        l_chldBranches.push_back ( l_tmpVector ); // add this current branch to list.
+                    foreach (NodeList l_curLst, l_foundStems){
+                        NodeList l_tmpLst; // creates the current vector (1 of x, x = l_curBranch.size();
+                        l_tmpLst << l_curLvlNd << l_curLst;
+                        l_chldBranches << l_tmpLst; // add this current branch to list.
                     }
                 } else { // the end of the line!
-                    NodeList tmpVector;
-                    tmpVector << (const_cast<Node*>(l_curLvlNd));
-                    l_chldBranches.push_back ( tmpVector ); // add this current branch to list.
+                    NodeList l_tmpLst;
+                    l_tmpLst << l_curLvlNd;
+                    l_chldBranches << l_tmpLst; // add this current branch to list.
                 }
-            }
+           }
 
             qDebug() << "(ling) [Parser] Tier" << (p_tree.size () - p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
             return l_chldBranches;

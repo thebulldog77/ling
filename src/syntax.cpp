@@ -21,7 +21,9 @@
  */
 
 #include "syntax.hpp"
-#include <exception>
+#include <QtDebug>
+#include <QtDBus/QDBusMessage>
+#include <QtDBus/QDBusConnection>
 #include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
 
@@ -36,7 +38,7 @@ namespace Wintermute {
     namespace Linguistics {
 
         const string Node::toString ( const Node::FormatVerbosity& p_density ) const {
-            Lexical::DataFlagMap::ConstIterator l_flgItr = m_lxdt.flags ().begin ();
+            Lexical::FlagMapping::ConstIterator l_flgItr = m_lxdt.flags ().begin ();
             QString sig;
             switch ( p_density ) {
             case MINIMAL:
@@ -75,17 +77,36 @@ namespace Wintermute {
         }
 
         const Node* Node::create( const Lexical::Data& p_lxdt ){
-            Lexical::Cache::write (p_lxdt);
-            return Node::obtain ( p_lxdt.locale ().toStdString (), p_lxdt.id ().toStdString () );
+            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","write");
+            l_call << QVariant::fromValue(p_lxdt);
+            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
+
+            if (l_reply.type () == QDBusMessage::ReplyMessage){
+                Lexical::Cache::write (p_lxdt);
+                return Node::obtain ( p_lxdt.locale ().toStdString (), p_lxdt.id ().toStdString () );
+            } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
+                qDebug() << "(ling) [Node] Error creaing Node data over D-Bus."
+                         << l_reply.errorMessage ();
+                return NULL;
+            }
+
+            return NULL;
         }
 
-        /// @bug Something funky is happening here.
         const Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
             Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
 
             if ( exists ( p_lcl , p_id ) ) {
-                if (Lexical::Cache::read(l_dt))
+                QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","read");
+                l_call << QVariant::fromValue(l_dt);
+                QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
+                if (l_reply.type () == QDBusMessage::ReplyMessage){
+                    l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
                     return new Node ( l_dt );
+                } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
+                    qDebug() << "(ling) [Node] Error obtaining Node data from over D-Bus."
+                             << l_reply.errorMessage ();
+                }
             }
 
             return NULL;
@@ -93,13 +114,34 @@ namespace Wintermute {
 
         const Node* Node::buildPseudo ( const string& p_lcl, const string& p_sym ) {
             Lexical::Data l_dt = Lexical::Data::createData (QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
-            Lexical::Cache::pseudo (l_dt);
+            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","pseudo");
+            l_call << QVariant::fromValue(l_dt);
+            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
+
+            if (l_reply.type () == QDBusMessage::ErrorMessage){
+                qDebug() << "(data) [Node] Unable to obtain a psuedo node for the" << QString::fromStdString (p_lcl)
+                         << "locale of the word" << QString::fromStdString(p_sym) << "."
+                         <<  l_reply.errorMessage ();
+                return NULL;
+            } else if (l_reply.type () == QDBusMessage::ReplyMessage)
+                l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
+
             return new Node ( l_dt );
         }
 
         const bool Node::exists ( const string& p_lcl, const string& p_id ) {
             Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
-            return Lexical::Cache::exists(l_dt);
+            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
+            l_call << QVariant::fromValue(l_dt);
+            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
+
+            if (l_reply.type () == QDBusMessage::ErrorMessage){
+                qDebug() << "(data) [Node] Unable to determine existance of" << QString::fromStdString (p_id) << QString::fromStdString (p_lcl) << ":"
+                         << l_reply.errorMessage ();
+            } else if (l_reply.type () == QDBusMessage::ReplyMessage)
+                return l_reply.arguments ().at (0).toBool ();
+
+            return false;
         }
 
         const Node* Node::form ( const Lexical::Data l_dt ) {
@@ -108,13 +150,13 @@ namespace Wintermute {
 
         NodeList Node::expand ( const Node* p_nd ) {
             NodeList l_vtr;
-            Lexical::DataFlagMap l_map;
+            Lexical::FlagMapping l_map;
             int l_indx = 0;
 
             l_map = p_nd->flags ();
 
-            for ( Lexical::DataFlagMap::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
-                Lexical::DataFlagMap l_mp;
+            for ( Lexical::FlagMapping::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
+                Lexical::FlagMapping l_mp;
                 l_mp.insert (itr.key (),itr.value ());
                 Lexical::Data l_dt = Lexical::Data::createData (p_nd->id (),p_nd->locale (), p_nd->symbol ());
                 l_dt.setFlags (l_mp);

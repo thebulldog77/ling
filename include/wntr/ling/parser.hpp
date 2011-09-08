@@ -376,7 +376,7 @@ namespace Wintermute {
                  * @fn Parser
                  * @param
                  */
-                Parser ( const QString& = Wintermute::Data::Linguistics::Configuration::locale ()  );
+                Parser ( const QString& = Wintermute::Data::Linguistics::System::locale ()  );
 
                 /**
                  * @brief
@@ -395,7 +395,7 @@ namespace Wintermute {
                  * @fn setLocale
                  * @param
                  */
-                void setLocale ( const QString& = Wintermute::Data::Linguistics::Configuration::locale ());
+                void setLocale ( const QString& = Wintermute::Data::Linguistics::System::locale ());
 
                 /**
                  * @brief

@@ -2,7 +2,7 @@
  * wntrling.hpp
  * This file is part of Wintermute Linguistics
  *
- * Copyright (C) 2011 - Wintermute Developers <wintermute-devel@lists.launchpad.net>
+ * Copyright (C) 2011 - Wintermute Developers <wntr/ling/wintermute-devel@lists.launchpad.net>
  *
  * Wintermute Linguistics is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,9 +35,10 @@
 #ifndef WINTERMUTE_LINGUISTICS
 #define WINTERMUTE_LINGUISTICS
 
-#include <syntax.hpp>
-#include <parser.hpp>
-#include <meanings.hpp>
+#include <wntr/ling/syntax.hpp>
+#include <wntr/ling/parser.hpp>
+#include <wntr/ling/meanings.hpp>
+#include <wntr/ling/adaptors.hpp>
 
 #endif /* WINTERMUTE_LINGUISTICS */
-// kate: indent-mode cstyle; space-indent on; indent-width 4; 
+// kate: indent-mode cstyle; space-indent on; indent-width 4;

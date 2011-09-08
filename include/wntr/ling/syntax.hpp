@@ -33,7 +33,7 @@ using namespace Wintermute::Data::Linguistics;
 
 using std::string;
 using Wintermute::Data::Linguistics::Lexical::Data;
-using Wintermute::Data::Linguistics::Lexical::DataFlagMap;
+using Wintermute::Data::Linguistics::Lexical::FlagMapping;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -95,7 +95,7 @@ namespace Wintermute {
             Q_PROPERTY(const QString locale READ locale)
             Q_PROPERTY(const QString symbol READ symbol)
             Q_PROPERTY(const QString value READ toString)
-            Q_PROPERTY(const DataFlagMap flags READ flags)
+            Q_PROPERTY(const FlagMapping flags READ flags)
             Q_PROPERTY(const Data* data READ data)
             Q_ENUMS(FormatVerbosity)
 
@@ -189,7 +189,7 @@ namespace Wintermute {
                  * @fn flags
                  * @return The flags of the Node.
                  */
-                Q_INVOKABLE inline const DataFlagMap flags() const {
+                Q_INVOKABLE inline const FlagMapping flags() const {
                     return m_lxdt.flags ();
                 }
 
@@ -205,7 +205,7 @@ namespace Wintermute {
                 /**
                  * @brief Determines if the Node is 'flat'.
                  *
-                 * A Node is considered 'flat' if and only if the size of the DataFlagMap returned
+                 * A Node is considered 'flat' if and only if the size of the FlagMapping returned
                  * by flags() is 1.
                  *
                  * @fn isFlat

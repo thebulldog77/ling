@@ -3,9 +3,10 @@ project(WntrLing)
 
 set(MOC_CODE )
 set(WNTRLING_MAJOR_VERSION 0)
-set(WNTRLING_MINOR_VERSION 01)
+set(WNTRLING_MINOR_VERSION 0)
+set(WNTRLING_MICRO_VERSION 1)
 set(WNTRLING_VERSION
-    ${WNTRLING_MAJOR_VERSION}.${WNTRLING_MINOR_VERSION})
+    ${WNTRLING_MAJOR_VERSION}.${WNTRLING_MINOR_VERSION}${WNTRLING_MICRO_VERSION})
 
 ## Let's allow to choose the installation dirs.
 set(LIB_INSTALL_DIR lib CACHE PATH "Installation dir for libraries")
@@ -38,6 +39,7 @@ find_package(Boost 1.42 COMPONENTS
 
 find_package(Qt4 4.4.3 COMPONENTS
     QtCore
+    QtDBus
     QT_DONT_USE_GUI
     REQUIRED)
 
@@ -53,13 +55,15 @@ set(WNTRLING_INCLUDE_DIRS "${WNTRLING_INCLUDE_DIR}"
     ${Boost_INCLUDE_DIR}
     ${QT_INCLUDE_DIR})
 set(WNTRLING_CMAKE_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/WntrLing" CACHE PATH "CMake dir.")
-set(WNTRLING_LIBRARIES "wntrdata"
+set(WNTRLING_LIBRARIES "${WNTRDATA_LIBRARIES}"
     ${PYTHON_LIBRARIES}
     ${QT_LIBRARIES}
     ${Boost_LIBRARIES})
 
-include_directories(${WNTRLING_INCLUDE_DIRS}
-    "include/wntr/ling")
+include_directories("${PROJECT_SOURCE_DIR}/include/wntr/ling"
+    "${PROJECT_SOURCE_DIR}/include/wntr"
+    "${PROJECT_SOURCE_DIR}/include"
+    ${WNTRLING_INCLUDE_DIRS})
 
 file(GLOB WNTRLING_SHPP "include/wntr/ling/*.hpp")
 file(GLOB WNTRLING_SCPP "src/*.cpp")
