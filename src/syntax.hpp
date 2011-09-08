@@ -23,7 +23,6 @@
 #define __SYNTAX_HPP__
 
 #include <string>
-#include <syntax.hpp>
 #include <QMap>
 #include <QList>
 #include <wntrdata.hpp>
