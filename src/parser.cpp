@@ -350,7 +350,8 @@ namespace Wintermute {
 
             foreach(QString l_token, p_tokens){
                 Node* l_node = formNode(l_token);
-                l_theNodes.push_back(l_node);
+                if (l_node)
+                    l_theNodes.push_back(l_node);
             }
 
             //disconnect(this,SLOT(generateNode(Node*)));
@@ -367,7 +368,9 @@ namespace Wintermute {
                 emit foundPseduoNode(l_theNode);
             }
 
-            l_theNode->setProperty ("OriginalToken",p_symbol);
+            if (l_theNode)
+                l_theNode->setProperty ("OriginalToken",p_symbol);
+
             return l_theNode;
         }
 
@@ -413,27 +416,32 @@ namespace Wintermute {
             int l_totalPaths = 1;
             NodeTree l_metaTree;
 
-            for ( NodeList::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
-                const Node* l_nd = *itr;
-                NodeList l_variations = Node::expand ( l_nd );
-                const unsigned int size = l_variations.size ();
-                Q_ASSERT(size >= 1);
-                if ( itr != p_ndVtr.begin() )
-                    l_totalPaths *= size;
+            if (!p_ndVtr.isEmpty ()){
+                for ( NodeList::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
+                    const Node* l_nd = *itr;
+                    NodeList l_variations = Node::expand ( l_nd );
+                    const unsigned int size = l_variations.size ();
+                    Q_ASSERT(size >= 1);
+                    if ( itr != p_ndVtr.begin() )
+                        l_totalPaths *= size;
 
-                l_metaTree.push_back ( l_variations );
+                    l_metaTree.push_back ( l_variations );
+                }
+
+                qDebug() << "(ling) [Parser] Expecting" << l_totalPaths << "path(s).";
+
+                emit unwindingProgress(0.0);
+                NodeTree l_tree = expandNodes ( l_metaTree , l_totalPaths , 0 );
+                emit unwindingProgress(1.0);
+
+                qDebug() << "(ling) [Parser] Found" << l_tree.size() << "path(s).";
+
+                emit finishedUnwinding();
+                return l_tree;
+            } else {
+                qDebug() << "(ling) [Parser] No nodes to generate paths from found.";
+                return NodeTree();
             }
-
-            qDebug() << "(ling) [Parser] Expecting" << l_totalPaths << "path(s).";
-
-            emit unwindingProgress(0.0);
-            NodeTree l_tree = expandNodes ( l_metaTree , l_totalPaths , 0 );
-            emit unwindingProgress(1.0);
-
-            qDebug() << "(ling) [Parser] Found" << l_tree.size() << "path(s).";
-
-            emit finishedUnwinding();
-            return l_tree;
         }
 
         /// @todo Determine a means of generating unique signatures.

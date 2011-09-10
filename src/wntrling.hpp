@@ -1,5 +1,5 @@
 /**
- * wntrling.hpp
+ * @file wntrling.hpp
  * This file is part of Wintermute Linguistics
  *
  * Copyright (C) 2011 - Wintermute Developers <wintermute-devel@lists.launchpad.net>

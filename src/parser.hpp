@@ -495,10 +495,9 @@ namespace Wintermute {
     }
 }
 
-Q_DECLARE_METATYPE(Wintermute::Linguistics::Parser)
-Q_DECLARE_METATYPE(Wintermute::Linguistics::Binding)
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Token)
 Q_DECLARE_METATYPE(Wintermute::Linguistics::Rule)
-
+Q_DECLARE_METATYPE(Wintermute::Linguistics::Binding)
 
 #endif /* __PARSER_HPP__ */
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

@@ -21,7 +21,7 @@
  * Boston, MA  02110-1301  USA
  */
 
-#include "wntr/ling/adaptors.hpp"
+#include "adaptors.hpp"
 #include "wntrling.hpp"
 #include <QDBusConnection>
 
