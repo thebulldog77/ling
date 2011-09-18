@@ -266,7 +266,7 @@ namespace Wintermute {
                  * @param p_sym The symbol of the potential Node.
                  * @return A Node if the Node exists, or NULL if it doesn't.
                  */
-                static const Node* obtain ( const string&, const string& );
+                static Node* obtain ( const string&, const string& );
 
                 /**
                  * @brief Creates a new Node based on a Lexical::Data.
@@ -276,7 +276,7 @@ namespace Wintermute {
                  * @warning This method may fail quietly, if the Lexical::Cache is unable to write the Lexical::Data to disk.
                  *          In a future implementation that uses error handling via exceptions, you'll be able to catch such a failure.
                  */
-                static const Node* create( const Lexical::Data& );
+                static Node* create( const Lexical::Data& );
 
                 /**
                  * @brief Generates a Node from a QString.
@@ -286,7 +286,7 @@ namespace Wintermute {
                  * @deprecated Use the obtain() method to obtain a Node from a QString.
                  * @obsolete This method will be removed in a later micro-version of WntrLing.
                  */
-                static const Node* fromString ( const string& );
+                static Node* fromString ( const string& );
 
                 /**
                  * @brief Builds a psuedo-Node with the specified locale and symbol.
@@ -296,7 +296,7 @@ namespace Wintermute {
                  * @return A Node representing the psuedo-Node, or NULL if no pseudo-Nodes could be formed.
                  * @todo Check if this Node exists. If it does, return that instead of forming a psuedo-Node.
                  */
-                static const Node* buildPseudo ( const string&, const string& );
+                static Node* buildPseudo ( const string&, const string& );
 
                 /**
                  * @brief Creates a Node based on a specific Lexical::Data.
@@ -305,7 +305,7 @@ namespace Wintermute {
                  * @return A new Node with @var p_lxdt at its core.
                  * @see Node(Lexical::Data p_lxdt)
                  */
-                static const Node* form ( Lexical::Data );
+                static Node* form ( Lexical::Data );
 
                 /**
                  * @brief Splits a Node into many Nodes.
@@ -384,14 +384,14 @@ namespace Wintermute {
                  * @param p_lcl The locale of the link.
                  * @warning The locale property may become obsolete in order to ensure that we're able to support translations.
                  */
-                static const Link* form ( const Node* , const Node* , const string&, const string& );
+                static Link* form ( const Node* , const Node* , const string&, const string& );
 
                 /**
                  * @brief Forms a link from a QString.
                  * @fn fromString
                  * @param p_str The QString representing a Link.
                  */
-                static const Link* fromString ( const string& );
+                static Link* fromString ( const string& );
 
                 /**
                  * @brief Obtains the source Node.

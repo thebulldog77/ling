@@ -333,8 +333,7 @@ namespace Wintermute {
                     l_ln = l_iStrm.readLine ();
                 }
 
-				Lexical::Data l_nwDt = Lexical::Data::createData(Lexical::Data::idFromString(p_nd->symbol()),
-								 locale(), p_nd->symbol(), l_dtmp);
+				Lexical::Data l_nwDt(Lexical::Data::idFromString(p_nd->symbol()), locale(), p_nd->symbol(), l_dtmp);
 				Lexical::Cache::write(l_nwDt);
 				p_nd = new Node(l_nwDt);
 				qDebug() << "(ling) [Parser] Node generated." << endl;

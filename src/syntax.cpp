@@ -76,7 +76,7 @@ namespace Wintermute {
             }
         }
 
-        const Node* Node::create( const Lexical::Data& p_lxdt ){
+        Node* Node::create( const Lexical::Data& p_lxdt ){
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","write");
             l_call << QVariant::fromValue(p_lxdt);
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
@@ -93,8 +93,8 @@ namespace Wintermute {
             return NULL;
         }
 
-        const Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
-            Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+        Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
+            Lexical::Data l_dt( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
 
             if ( exists ( p_lcl , p_id ) ) {
                 QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","read");
@@ -112,8 +112,8 @@ namespace Wintermute {
             return NULL;
         }
 
-        const Node* Node::buildPseudo ( const string& p_lcl, const string& p_sym ) {
-            Lexical::Data l_dt = Lexical::Data::createData (QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
+        Node* Node::buildPseudo ( const string& p_lcl, const string& p_sym ) {
+            Lexical::Data l_dt(QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","pseudo");
             l_call << QVariant::fromValue(l_dt);
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
@@ -130,9 +130,10 @@ namespace Wintermute {
         }
 
         const bool Node::exists ( const string& p_lcl, const string& p_id ) {
-            Lexical::Data l_dt = Lexical::Data::createData ( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+            Lexical::Data l_dt( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+            QVariant l_vrnt = QVariant::fromValue(l_dt);
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
-            l_call << QVariant::fromValue(l_dt);
+            l_call << l_vrnt;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ErrorMessage){
@@ -144,7 +145,7 @@ namespace Wintermute {
             return false;
         }
 
-        const Node* Node::form ( const Lexical::Data l_dt ) {
+        Node* Node::form ( const Lexical::Data l_dt ) {
             return new Node ( l_dt );
         }
 
@@ -158,13 +159,12 @@ namespace Wintermute {
             for ( Lexical::FlagMapping::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
                 Lexical::FlagMapping l_mp;
                 l_mp.insert (itr.key (),itr.value ());
-                Lexical::Data l_dt = Lexical::Data::createData (p_nd->id (),p_nd->locale (), p_nd->symbol ());
+                Lexical::Data l_dt(p_nd->id (),p_nd->locale (), p_nd->symbol ());
                 l_dt.setFlags (l_mp);
-
                 l_vtr.push_back ( const_cast<Node*>(Node::form(l_dt)) );
             }
 
-            //qDebug() << "(ling) [Node] Expanded symbol" << p_nd->symbol ().c_str () << "to spread across its" << l_map.size() << "variations.";
+            qDebug() << "(ling) [Node] Expanded symbol" << p_nd->symbol () << "to spread across its" << l_map.size() << "variations.";
 
             return l_vtr;
         }
@@ -175,11 +175,11 @@ namespace Wintermute {
                    m_flgs + ":" + m_lcl;
         }
 
-        const Link* Link::form ( const Node * p_src, const Node * p_dst, const string & p_flgs, const string & p_lcl ) {
+        Link* Link::form ( const Node * p_src, const Node * p_dst, const string & p_flgs, const string & p_lcl ) {
             return new Link ( p_src , p_dst , p_flgs , p_lcl );
         }
 
-        const Link* Link::fromString ( const string& p_data ) {
+        Link* Link::fromString ( const string& p_data ) {
             char_separator<char> l_frstLvl ( ":" );
             char_separator<char> l_scndLvl ( "," );
 
