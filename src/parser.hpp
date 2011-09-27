@@ -116,7 +116,7 @@ namespace Wintermute {
          * @enddot
          * The Parser can then expand these tokens into their proper Node forms.
          * @internal
-         * @class Token parser.hpp "include/wntr/ling/parser.hpp"
+         * @class Token parser.hpp "src/parser.hpp"
          */
         class Token : public QObject {
             Q_OBJECT
@@ -180,7 +180,7 @@ namespace Wintermute {
          * Binding objects are used extenstively by Meaning objects in the formulation
          * process of parsing,
          *
-         * @class Binding parser.hpp "include/wntr/ling/parser.hpp"
+         * @class Binding parser.hpp "src/parser.hpp"
          */
         class Binding : public QObject {
             Q_OBJECT
@@ -270,7 +270,7 @@ namespace Wintermute {
 
         /**
          * @brief Represents a set of bindings that permit linguistics links to be converted into ontological links.
-         * @class Rule parser.hpp "include/wntr/ling/parser.hpp"
+         * @class Rule parser.hpp "src/parser.hpp"
          */
         class Rule : public QObject {
             Q_OBJECT
@@ -481,7 +481,7 @@ namespace Wintermute {
          *
          * @attention Using Big O notation, the parser avoids running into memory intenstive operations. The typical execution size is O(n1) * ...  * O(n(x)).
          *            Typically words have only one to three definitions. But if a sentence has words with 6 different meangins and there's 40 words; things get hairy <b>fast</b>.
-         * @class Parser parser.hpp "include/wntr/ling/parser.hpp"
+         * @class Parser parser.hpp "src/parser.hpp"
          */
         class Parser : public QObject {
             Q_OBJECT

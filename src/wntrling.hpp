@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor,
  * Boston, MA  02110-1301  USA
  *
- * 
+ *
  * @mainpage Wintermute Linguistics (WntrLing)
  * Wintermute uses an unique blend of natural language processing learning utilities,
  * some of which are similar to already existing projects (such as LinkGrammar at OpenCog
@@ -38,6 +38,88 @@
 #include "parser.hpp"
 #include "meanings.hpp"
 #include "adaptors.hpp"
+#include <QObject>
+
+namespace Wintermute {
+    namespace Linguistics {
+        struct System;
+
+        /**
+         * @brief
+         *
+         * @class System wntrling.hpp "src/wntrling.hpp"
+         */
+        class System : public QObject {
+            Q_OBJECT
+            Q_DISABLE_COPY(System)
+
+            private:
+                static System* s_sys; /**< The internal instance. */
+                Parser* m_prs; /**< The global parser instance. */
+                /**
+                 * @brief
+                 *
+                 * @fn System
+                 */
+                System();
+                ~System();
+
+            signals:
+                /**
+                 * @brief
+                 *
+                 * @fn started
+                 */
+                void started();
+
+                /**
+                 * @brief
+                 *
+                 * @fn stopped
+                 */
+                void stopped();
+
+                /**
+                 * @brief
+                 *
+                 * @fn responseFormed
+                 * @param
+                 */
+                void responseFormed(const QString&);
+
+            public:
+                /**
+                 * @brief
+                 *
+                 * @fn instance
+                 */
+                static System* instance();
+
+            public slots:
+                /**
+                 * @brief
+                 *
+                 * @fn start
+                 */
+                static void start();
+
+                /**
+                 * @brief
+                 *
+                 * @fn stop
+                 */
+                static void stop();
+
+                /**
+                 * @brief
+                 *
+                 * @fn tellSystem
+                 * @param
+                 */
+                static void tellSystem(const QString& );
+        };
+    }
+}
 
 #endif /* WINTERMUTE_LINGUISTICS */
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

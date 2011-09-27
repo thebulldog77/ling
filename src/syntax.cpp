@@ -79,11 +79,14 @@ namespace Wintermute {
         Node* Node::create( const Lexical::Data& p_lxdt ){
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","write");
             l_call << QVariant::fromValue(p_lxdt);
+            qDebug() << l_call;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ReplyMessage){
-                Lexical::Cache::write (p_lxdt);
-                return Node::obtain ( p_lxdt.locale ().toStdString (), p_lxdt.id ().toStdString () );
+                const Lexical::Data l_lxdt = l_reply.arguments ().at (0).value<Lexical::Data>();
+                Lexical::Cache::write (l_lxdt);
+                qDebug() << QVariant::fromValue<Lexical::Data>(l_lxdt);
+                return Node::obtain ( l_lxdt.locale ().toStdString (), l_lxdt.id ().toStdString () );
             } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
                 qDebug() << "(ling) [Node] Error creaing Node data over D-Bus."
                          << l_reply.errorMessage ();
@@ -99,9 +102,11 @@ namespace Wintermute {
             if ( exists ( p_lcl , p_id ) ) {
                 QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","read");
                 l_call << QVariant::fromValue(l_dt);
+                qDebug() << l_call;
                 QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
                 if (l_reply.type () == QDBusMessage::ReplyMessage){
                     l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
+                    qDebug() << QVariant::fromValue<Lexical::Data>(l_dt);
                     return new Node ( l_dt );
                 } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
                     qDebug() << "(ling) [Node] Error obtaining Node data from over D-Bus."
@@ -116,6 +121,7 @@ namespace Wintermute {
             Lexical::Data l_dt(QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","pseudo");
             l_call << QVariant::fromValue(l_dt);
+            qDebug() << l_call;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ErrorMessage){
@@ -123,8 +129,10 @@ namespace Wintermute {
                          << "locale of the word" << QString::fromStdString(p_sym) << "."
                          <<  l_reply.errorMessage ();
                 return NULL;
-            } else if (l_reply.type () == QDBusMessage::ReplyMessage)
+            } else if (l_reply.type () == QDBusMessage::ReplyMessage){
                 l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
+                qDebug() << QVariant::fromValue<Lexical::Data>(l_dt);
+            }
 
             return new Node ( l_dt );
         }
@@ -134,13 +142,17 @@ namespace Wintermute {
             QVariant l_vrnt = QVariant::fromValue(l_dt);
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
             l_call << l_vrnt;
+            qDebug() << "(ling) [Node] <exists>" << QString::fromStdString (p_lcl);
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ErrorMessage){
                 qDebug() << "(data) [Node] Unable to determine existance of" << QString::fromStdString (p_id) << QString::fromStdString (p_lcl) << ":"
                          << l_reply.errorMessage ();
-            } else if (l_reply.type () == QDBusMessage::ReplyMessage)
-                return l_reply.arguments ().at (0).toBool ();
+            } else if (l_reply.type () == QDBusMessage::ReplyMessage){
+                const bool l_rlpy = l_reply.arguments ().at (0).toBool ();
+                qDebug() << "(ling) [Node] Exists:"<< l_rlpy;
+                return l_rlpy;
+            }
 
             return false;
         }

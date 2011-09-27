@@ -1,7 +1,7 @@
 /**
  * @file    adaptors.cpp
  * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
- * @created 9/6/2011
+ *
  *
  *
  *
@@ -27,16 +27,22 @@
 
 namespace Wintermute {
     namespace Linguistics {
-        SystemAdaptor::SystemAdaptor() : Adaptor((new QObject)){
+        SystemAdaptor::SystemAdaptor() : Adaptor(Linguistics::System::instance()){
             QDBusConnection::sessionBus().connect ("org.thesii.Wintermute","/Master",
                                       "org.thesii.Wintermute.Master","aboutToQuit",
                                       this,SLOT(quit()));
+            setAutoRelaySignals (true);
         }
 
         void SystemAdaptor::quit (const QDBusMessage& p_msg) const {
-            System::unload ();
-            p_msg.createReply (true);
+            Linguistics::System::stop ();
             CoreAdaptor::haltSystem ();
+            p_msg.createReply (true);
+        }
+
+        void SystemAdaptor::tellSystem (const QString &p_txt, const QDBusMessage &p_msg) const {
+            Linguistics::System::tellSystem (p_txt);
+            p_msg.createReply (true);
         }
     }
 }

@@ -1,7 +1,7 @@
 /**
  * @file    adaptors.hpp
  * @author  Wintermute Developers <wintermute-devel@lists.launchpad.net>
- * @created 9/6/2011
+ *
  *
  *
  *
@@ -36,11 +36,13 @@ namespace Wintermute {
                 explicit SystemAdaptor();
 
             signals:
-                void initialized();
-                void deinitialized();
+                void started();
+                void stopped();
+                void responseFormed(const QString&);
 
             public slots:
                 virtual void quit(const QDBusMessage&) const;
+                void tellSystem(const QString&, const QDBusMessage&)const;
         };
     }
 }

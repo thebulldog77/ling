@@ -1,7 +1,5 @@
 /**
- * wntrling.cpp
- * This file is part of Wintermute Linguistics
- *
+ * @file wntrling.cpp
  * Copyright (C) 2011 - Wintermute Developers <wintermute-devel@lists.launchpad.net>
  *
  * Wintermute Linguistics is free software; you can redistribute it and/or modify
@@ -20,5 +18,36 @@
  * Boston, MA  02110-1301  USA
  */
 #include "wntrling.hpp"
+
+namespace Wintermute {
+    namespace Linguistics {
+        System* System::s_sys = NULL;
+
+        System::System() : QObject(), m_prs((new Parser)) {
+            if (System::s_sys)
+                System::s_sys->deleteLater ();
+
+            System::s_sys = this;
+        }
+
+        System::~System () { m_prs->deleteLater (); }
+
+        System* System::instance () {
+            if (!System::s_sys)
+                System::s_sys = new System;
+
+            return s_sys;
+        }
+
+        void System::start () { emit s_sys->started (); }
+
+        void System::stop () { emit s_sys->stopped (); }
+
+        void System::tellSystem (const QString &p_txt){
+            s_sys->m_prs->parse (p_txt);
+            emit s_sys->responseFormed(p_txt);
+        }
+    }
+}
 
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

@@ -8,8 +8,8 @@ add_library(wntrling SHARED
     ${WNTRLING_SOURCES})
 
 set_target_properties(wntrling PROPERTIES
-    VERSION 0.0.1
-    SOVERSION 0)
+    VERSION ${GENERIC_LIB_VERSION}
+    SOVERSION ${GENERIC_LIB_SOVERSION})
 
 target_link_libraries(wntrling ${WNTRLING_LIBRARIES})
 

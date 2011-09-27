@@ -85,7 +85,7 @@ namespace Wintermute {
          *
          * We have a convience method, expand(), that splits a Node into the different meanings it represents.
          *
-         * @class Node syntax.hpp "include/wntr/ling/syntax.hpp"
+         * @class Node syntax.hpp "src/syntax.hpp"
          * @internal
          */
         class Node : public QObject {
@@ -350,7 +350,7 @@ namespace Wintermute {
             }
          * @enddot
          *
-         * @class Link syntax.hpp "include/wntr/ling/syntax.hpp"
+         * @class Link syntax.hpp "src/syntax.hpp"
          * @internal
          */
         class Link : public QObject {

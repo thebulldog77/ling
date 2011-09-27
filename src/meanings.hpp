@@ -70,7 +70,7 @@ namespace Wintermute {
      *
      * @see Binding
      * @see Rule
-     * @class Meaning parser.hpp "include/wntr/ling/parser.hpp"
+     * @class Meaning parser.hpp "src/parser.hpp"
      */
     class Meaning : public QObject {
         Q_OBJECT
