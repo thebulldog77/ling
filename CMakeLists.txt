@@ -11,8 +11,8 @@ include(WintermuteMacros)
 include(WintermuteDefaults)
 
 ## Packages
-find_package(WntrData REQUIRED)
-find_package(PythonLibs REQUIRED)
+find_package(WntrData 0.01 REQUIRED)
+find_package(PythonLibs 2.7 REQUIRED)
 find_package(Boost 1.42 COMPONENTS
     python
     REQUIRED)
