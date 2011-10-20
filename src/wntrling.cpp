@@ -47,7 +47,19 @@ namespace Wintermute {
             s_sys->m_prs->parse (p_txt);
             emit s_sys->responseFormed(p_txt);
         }
+
+        void Plugin::initialize () const {
+             Linguistics::SystemAdaptor* l_adpt = new Linguistics::SystemAdaptor;
+             Wintermute::IPC::System::registerObject ("/System", l_adpt);
+        }
+
+        void Plugin::deinitialize () const {
+        }
+
+        QObject* Plugin::instance () const { return System::instance(); }
+
     }
 }
 
+Q_EXPORT_PLUGIN2(WntrLing, Wintermute::Linguistics::Plugin)
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

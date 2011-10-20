@@ -38,11 +38,16 @@
 #include "parser.hpp"
 #include "meanings.hpp"
 #include "adaptors.hpp"
+#include <wntr/plugins.hpp>
+#include <QtPlugin>
 #include <QObject>
+
+using Wintermute::Plugin::AbstractPlugin;
 
 namespace Wintermute {
     namespace Linguistics {
         struct System;
+        struct Plugin;
 
         /**
          * @brief
@@ -117,6 +122,18 @@ namespace Wintermute {
                  * @param
                  */
                 static void tellSystem(const QString& );
+        };
+
+       class Plugin : public AbstractPlugin {
+            Q_OBJECT
+            public:
+                Plugin() : AbstractPlugin() { }
+                ~Plugin() { }
+                Plugin(Plugin const &k) : AbstractPlugin(k) { }
+
+                virtual void initialize() const;
+                virtual void deinitialize() const;
+                virtual QObject* instance() const;
         };
     }
 }
