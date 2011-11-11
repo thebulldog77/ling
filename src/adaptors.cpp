@@ -23,7 +23,7 @@
 
 #include "adaptors.hpp"
 #include "wntrling.hpp"
-#include <QDBusConnection>
+#include <QtDBus/QDBusConnection>
 
 namespace Wintermute {
     namespace Linguistics {

@@ -22,15 +22,12 @@
 #ifndef __SYNTAX_HPP__
 #define __SYNTAX_HPP__
 
-#include <string>
 #include <QMap>
 #include <QList>
 #include <wntrdata.hpp>
 
-using namespace std;
 using namespace Wintermute::Data::Linguistics;
 
-using std::string;
 using Wintermute::Data::Linguistics::Lexical::Data;
 using Wintermute::Data::Linguistics::Lexical::FlagMapping;
 
@@ -44,7 +41,7 @@ namespace Wintermute {
          * @brief Represents a @c QVector of strings.
          * @typedef StringVector
          */
-        typedef QList<string> StringList;
+        typedef QList<QString> StringList;
         /**
          * @brief Represents a @c QVector of @c Nodes;
          * @typedef NodeVector
@@ -233,7 +230,7 @@ namespace Wintermute {
                  * @fn toString
                  * @param p_verbosity The verbosity of the printing of the Node.
                  */
-                Q_INVOKABLE const string toString ( const FormatVerbosity& = FULL ) const;
+                Q_INVOKABLE const QString toString ( const FormatVerbosity& = FULL ) const;
 
                 /**
                  * @brief Prints out a QString representing a specific Node.
@@ -241,7 +238,7 @@ namespace Wintermute {
                  * @param p_node The Node to be printed.
                  * @param p_verbosity The verbosity of the printing of the Node.
                  */
-                static const string toString ( const Node* , const FormatVerbosity& = FULL );
+                static const QString toString ( const Node* , const FormatVerbosity& = FULL );
 
                 /**
                  * @brief Prints out an entire NodeVector using a specific FormatVerbosity.
@@ -249,7 +246,7 @@ namespace Wintermute {
                  * @param p_ndVtr The vector to be printed out.
                  * @param p_verbosity The verbosity for each Node in the NodeVector to be printed with.
                  */
-                static const string toString ( const NodeList& , const FormatVerbosity& = FULL );
+                static const QString toString ( const NodeList& , const FormatVerbosity& = FULL );
 
                 /**
                  * @brief Determines if a specific Node exists.
@@ -257,7 +254,7 @@ namespace Wintermute {
                  * @param p_lcl The locale of the potential Node.
                  * @param p_sym The symbol of the potential Node.
                  */
-                static const bool exists ( const string&, const string& );
+                static const bool exists ( const QString&, const QString& );
 
                 /**
                  * @brief Obtains a Node from a specific locale with a specific symbol.
@@ -266,7 +263,7 @@ namespace Wintermute {
                  * @param p_sym The symbol of the potential Node.
                  * @return A Node if the Node exists, or NULL if it doesn't.
                  */
-                static Node* obtain ( const string&, const string& );
+                static Node* obtain ( const QString&, const QString& );
 
                 /**
                  * @brief Creates a new Node based on a Lexical::Data.
@@ -286,7 +283,7 @@ namespace Wintermute {
                  * @deprecated Use the obtain() method to obtain a Node from a QString.
                  * @obsolete This method will be removed in a later micro-version of WntrLing.
                  */
-                static Node* fromString ( const string& );
+                static Node* fromString ( const QString& );
 
                 /**
                  * @brief Builds a psuedo-Node with the specified locale and symbol.
@@ -296,7 +293,7 @@ namespace Wintermute {
                  * @return A Node representing the psuedo-Node, or NULL if no pseudo-Nodes could be formed.
                  * @todo Check if this Node exists. If it does, return that instead of forming a psuedo-Node.
                  */
-                static Node* buildPseudo ( const string&, const string& );
+                static Node* buildPseudo ( const QString&, const QString& );
 
                 /**
                  * @brief Creates a Node based on a specific Lexical::Data.
@@ -358,9 +355,9 @@ namespace Wintermute {
             Q_OBJECT
             Q_PROPERTY(const Node* Source READ source)
             Q_PROPERTY(const Node* Destination READ destination)
-            Q_PROPERTY(const string Locale READ locale)
-            Q_PROPERTY(const string Flags READ flags)
-            Q_PROPERTY(const string Value READ toString)
+            Q_PROPERTY(const QString Locale READ locale)
+            Q_PROPERTY(const QString Flags READ flags)
+            Q_PROPERTY(const QString Value READ toString)
             Q_PROPERTY(const int Level READ level)
 
             public:
@@ -384,14 +381,14 @@ namespace Wintermute {
                  * @param p_lcl The locale of the link.
                  * @warning The locale property may become obsolete in order to ensure that we're able to support translations.
                  */
-                static Link* form ( const Node* , const Node* , const string&, const string& );
+                static Link* form ( const Node* , const Node* , const QString&, const QString& );
 
                 /**
                  * @brief Forms a link from a QString.
                  * @fn fromString
                  * @param p_str The QString representing a Link.
                  */
-                static Link* fromString ( const string& );
+                static Link* fromString ( const QString& );
 
                 /**
                  * @brief Obtains the source Node.
@@ -422,20 +419,20 @@ namespace Wintermute {
                  * @deprecated This method, as long with the concept of locale for Links, are phasing out.
                  * @obsolete
                  */
-                Q_INVOKABLE inline const string locale() const { return m_lcl; }
+                Q_INVOKABLE inline const QString locale() const { return m_lcl; }
 
                 /**
                  * @brief Obtains the flags of the Link.
                  * @fn flags
                  * @return The flags describing the relationship of this Link.
                  */
-                Q_INVOKABLE inline const string flags() const { return m_flgs; }
+                Q_INVOKABLE inline const QString flags() const { return m_flgs; }
 
                 /**
                  * @brief Obtains a QString that represents this Link.
                  * @fn toString
                  */
-                Q_INVOKABLE const string toString() const;
+                Q_INVOKABLE const QString toString() const;
 
                 /**
                  * @brief Null constructor.
@@ -459,15 +456,15 @@ namespace Wintermute {
                  * @param p_flgs The relationship described by the flags of the source Node's locale.
                  * @param p_lcl The locale of the flag.
                  */
-                Link ( const Node* p_src, const Node* p_dst, const string& p_flgs, const string& p_lcl ) :
+                Link ( const Node* p_src, const Node* p_dst, const QString& p_flgs, const QString& p_lcl ) :
                         m_src ( p_src ),m_dst ( p_dst ), m_flgs ( p_flgs ), m_lcl ( p_lcl ), m_lvl(0) { }
 
             private:
                 mutable int m_lvl;
                 const Node* m_src;
                 const Node* m_dst;
-                const string m_flgs;
-                const string m_lcl;
+                const QString m_flgs;
+                const QString m_lcl;
         };
 
         /**

@@ -25,7 +25,7 @@
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <wntr/data/ontology.hpp>
+#include <ontology.hpp>
 
 using namespace std;
 using namespace Wintermute::Linguistics;
@@ -87,7 +87,7 @@ namespace Wintermute {
                     }
 
                     if (l_hideList) {
-                        const QString l_k(l_nd->toString (Node::EXTRA).c_str ());
+                        const QString l_k = l_nd->toString (Node::EXTRA);
                         bool l_b = false;
                         foreach (const QString l_s, *l_hideList)
                             if (l_k.contains (l_s)) l_b = true;
@@ -207,9 +207,8 @@ namespace Wintermute {
                         l_lnkVtr << l_lnk;
                     else continue;
                 }
-            } else {
+            } else
                 qDebug() << "(ling) [Meaning] Out of level range.";
-            }
 
             return l_lnkVtr;
         }

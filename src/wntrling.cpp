@@ -17,7 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor,
  * Boston, MA  02110-1301  USA
  */
+
+#include "adaptors.hpp"
 #include "wntrling.hpp"
+#include <wntr/ipc.hpp>
+#include <wntr/core.hpp>
+#include <QtPlugin>
+
 
 namespace Wintermute {
     namespace Linguistics {
@@ -49,15 +55,18 @@ namespace Wintermute {
         }
 
         void Plugin::initialize () const {
-             Linguistics::SystemAdaptor* l_adpt = new Linguistics::SystemAdaptor;
-             Wintermute::IPC::System::registerObject ("/System", l_adpt);
+            connect(Wintermute::Core::instance (),SIGNAL(started()),Wintermute::Linguistics::System::instance (),SLOT(start()));
+            connect(Wintermute::Core::instance (),SIGNAL(stopped()),Wintermute::Linguistics::System::instance (),SLOT(stop()));
+
+            Linguistics::SystemAdaptor* l_adpt = new Linguistics::SystemAdaptor;
+
+            Wintermute::IPC::System::registerObject ("/System" , l_adpt);
         }
 
         void Plugin::deinitialize () const {
         }
 
         QObject* Plugin::instance () const { return System::instance(); }
-
     }
 }
 

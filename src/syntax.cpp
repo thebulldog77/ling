@@ -37,7 +37,7 @@ using Wintermute::Data::Linguistics::Lexical::Storage;
 namespace Wintermute {
     namespace Linguistics {
 
-        const string Node::toString ( const Node::FormatVerbosity& p_density ) const {
+        const QString Node::toString ( const Node::FormatVerbosity& p_density ) const {
             Lexical::FlagMapping::ConstIterator l_flgItr = m_lxdt.flags ().begin ();
             QString sig;
             switch ( p_density ) {
@@ -58,15 +58,15 @@ namespace Wintermute {
                 break;
             }
 
-            return sig.toStdString ();
+            return sig;
         }
 
-        const string Node::toString ( const Node* p_nd, const FormatVerbosity& p_density ) {
+        const QString Node::toString ( const Node* p_nd, const FormatVerbosity& p_density ) {
             return p_nd->toString ( p_density );
         }
 
-        const string Node::toString ( const NodeList& p_ndVtr, const FormatVerbosity& p_density ) {
-            string sig;
+        const QString Node::toString ( const NodeList& p_ndVtr, const FormatVerbosity& p_density ) {
+            QString sig;
 
             for ( NodeList::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
                 sig += ( *itr )->toString ( p_density );
@@ -86,7 +86,7 @@ namespace Wintermute {
                 const Lexical::Data l_lxdt = l_reply.arguments ().at (0).value<Lexical::Data>();
                 Lexical::Cache::write (l_lxdt);
                 qDebug() << QVariant::fromValue<Lexical::Data>(l_lxdt);
-                return Node::obtain ( l_lxdt.locale ().toStdString (), l_lxdt.id ().toStdString () );
+                return Node::obtain ( l_lxdt.locale (), l_lxdt.id () );
             } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
                 qDebug() << "(ling) [Node] Error creaing Node data over D-Bus."
                          << l_reply.errorMessage ();
@@ -96,8 +96,8 @@ namespace Wintermute {
             return NULL;
         }
 
-        Node* Node::obtain ( const string& p_lcl, const string& p_id ) {
-            Lexical::Data l_dt( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+        Node* Node::obtain ( const QString& p_lcl, const QString& p_id ) {
+            Lexical::Data l_dt( p_id , p_lcl );
 
             if ( exists ( p_lcl , p_id ) ) {
                 QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","read");
@@ -117,16 +117,16 @@ namespace Wintermute {
             return NULL;
         }
 
-        Node* Node::buildPseudo ( const string& p_lcl, const string& p_sym ) {
-            Lexical::Data l_dt(QString::fromStdString (""),QString::fromStdString (p_lcl),QString::fromStdString(p_sym));
+        Node* Node::buildPseudo ( const QString& p_lcl, const QString& p_sym ) {
+            Lexical::Data l_dt("",p_lcl,p_sym);
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","pseudo");
             l_call << QVariant::fromValue(l_dt);
             qDebug() << l_call;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ErrorMessage){
-                qDebug() << "(data) [Node] Unable to obtain a psuedo node for the" << QString::fromStdString (p_lcl)
-                         << "locale of the word" << QString::fromStdString(p_sym) << "."
+                qDebug() << "(data) [Node] Unable to obtain a psuedo node for the" << p_lcl
+                         << "locale of the word" << p_sym << "."
                          <<  l_reply.errorMessage ();
                 return NULL;
             } else if (l_reply.type () == QDBusMessage::ReplyMessage){
@@ -137,16 +137,16 @@ namespace Wintermute {
             return new Node ( l_dt );
         }
 
-        const bool Node::exists ( const string& p_lcl, const string& p_id ) {
-            Lexical::Data l_dt( QString::fromStdString (p_id) , QString::fromStdString (p_lcl) );
+        const bool Node::exists ( const QString& p_lcl, const QString& p_id ) {
+            Lexical::Data l_dt(p_id,p_lcl);
             QVariant l_vrnt = QVariant::fromValue(l_dt);
             QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
             l_call << l_vrnt;
-            qDebug() << "(ling) [Node] <exists>" << QString::fromStdString (p_lcl);
+            qDebug() << "(ling) [Node] <exists>" << p_lcl;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
 
             if (l_reply.type () == QDBusMessage::ErrorMessage){
-                qDebug() << "(data) [Node] Unable to determine existance of" << QString::fromStdString (p_id) << QString::fromStdString (p_lcl) << ":"
+                qDebug() << "(data) [Node] Unable to determine existance of" << p_id << p_lcl << ":"
                          << l_reply.errorMessage ();
             } else if (l_reply.type () == QDBusMessage::ReplyMessage){
                 const bool l_rlpy = l_reply.arguments ().at (0).toBool ();
@@ -181,46 +181,45 @@ namespace Wintermute {
             return l_vtr;
         }
 
-        const string Link::toString() const {
-            return m_src->toString() + "," + m_src->id().toStdString () + ":" +
-                   m_dst->toString() + "," + m_dst->id().toStdString () + ":" +
-                   m_flgs + ":" + m_lcl;
+        /// @todo Create a serialized version of the Link.
+        const QString Link::toString() const {
+            return QString::null;
         }
 
-        Link* Link::form ( const Node * p_src, const Node * p_dst, const string & p_flgs, const string & p_lcl ) {
+        Link* Link::form ( const Node * p_src, const Node * p_dst, const QString & p_flgs, const QString & p_lcl ) {
             return new Link ( p_src , p_dst , p_flgs , p_lcl );
         }
 
-        Link* Link::fromString ( const string& p_data ) {
+        Link* Link::fromString ( const QString& p_data ) {
             char_separator<char> l_frstLvl ( ":" );
             char_separator<char> l_scndLvl ( "," );
 
             typedef tokenizer<char_separator<char> > Tokenizer;
-            Tokenizer toks ( p_data,l_frstLvl );
+            Tokenizer toks ( p_data.toStdString() ,l_frstLvl );
 
             Tokenizer::const_iterator itr = toks.begin();
-            const string node1 = *itr;
-            const string node2 = * ( itr++ );
-            const string flags = * ( itr++ );
-            const string lcl = node1;
+            const std::string node1 = *itr,
+                              node2 = * ( itr++ );
 
             Tokenizer toks2 ( node1,l_scndLvl );
-            const string node1_id = * ( ++ ( toks2.begin() ) );
-
             Tokenizer toks3 ( node2,l_scndLvl );
-            const string node2_id = * ( ++ ( toks3.begin() ) );
+            
+            const QString node1_id = QString::fromStdString(* ( ++ ( toks2.begin() ) )),
+                          node2_id = QString::fromStdString(* ( ++ ( toks3.begin() ) )),
+                          flags    = QString::fromStdString(* ( itr++ )),
+                          lcl      = QString::fromStdString(node1);
 
-            return new Link ( Node::obtain ( lcl,node1_id ), Node::obtain ( lcl,node2_id ),
+            return new Link ( Node::obtain ( lcl ,node1_id ), Node::obtain ( lcl,node2_id ),
                               flags, lcl );
         }
 
         QDebug operator<<(QDebug dbg, const Node* p_nd) {
-             dbg.nospace () << "[" << p_nd->symbol () << " (" << QString::fromStdString (p_nd->toString (Node::EXTRA)) << "):" << p_nd->locale ().toStdString ().c_str ()<< "]";
+             dbg.nospace () << "[" << p_nd->symbol () << " (" << p_nd->toString (Node::EXTRA) << "):" << p_nd->locale ().toStdString ().c_str () << "]";
              return dbg.space();
         }
 
         QDebug operator<<(QDebug dbg, const Link* p_lnk) {
-             dbg.nospace () << "[Level " << p_lnk->level() << "](type:" << QString::fromStdString (p_lnk->flags ()) << ")"
+             dbg.nospace () << "[Level " << p_lnk->level() << "](type:" << p_lnk->flags () << ")"
                             << p_lnk->source () << "->" << p_lnk->destination ();
              return dbg.space();
         }

@@ -141,6 +141,7 @@ namespace Wintermute {
              * @brief Obtains a LinkList of Link objects that of which the specified Node is the source.
              * @fn isLinkedTo
              * @param p_node The Node in question.
+             * @todo Change this into 'linkedTo' and create an accompanying boolean method.
              */
             const LinkList isLinkedTo(const Node& ) const;
 
@@ -148,6 +149,7 @@ namespace Wintermute {
              * @brief Obtains a LinkList of Link objects that of which the specified Node is the destination.
              * @fn isLinkedBy
              * @param p_node The Node in question.
+             * @todo Change this into 'linkedBy' and create an accompanying boolean method.
              */
             const LinkList isLinkedBy(const Node& ) const;
 
