@@ -24,7 +24,7 @@
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <wntrdata.hpp>
+#include <plugins/data/wntrdata.hpp>
 #include <iostream>
 #include <iomanip>
 #include <QFile>
@@ -116,7 +116,7 @@ namespace Wintermute {
             const QString l_wh = m_bnd.attribute ( "with" ), l_has = m_bnd.attribute( "has" ),
                           l_hasAll = m_bnd.attribute( "hasAll" ), l_ndDestStr = p_ndDst.toString ( Node::EXTRA ),
                           l_ndSrcStr = p_ndSrc.toString ( Node::EXTRA );
-                          
+
             const QStringList l_options = l_wh.split ( "," );
 
             foreach (const QString l_s, l_options) {
@@ -193,7 +193,7 @@ namespace Wintermute {
                     l_nd = l_nd2;
                     l_nd2 = l_tmp;
                 }
-                
+
                 if (l_options.contains ("othertype"))
                     l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
                 else if (l_options.contains ("thistype"))
@@ -331,15 +331,15 @@ namespace Wintermute {
                     l_ln = l_iStrm.readLine ();
                 }
 
-		Lexical::Data l_nwDt(Lexical::Data::idFromString(p_nd->symbol()), locale(), p_nd->symbol(), l_dtmp);
-		Lexical::Cache::write(l_nwDt);
-		p_nd = new Node(l_nwDt);
-		qDebug() << "(ling) [Parser] Node generated." << endl;
+                Lexical::Data l_nwDt(Lexical::Data::idFromString(p_nd->symbol()), locale(), p_nd->symbol(), l_dtmp);
+                Lexical::Cache::write(l_nwDt);
+                p_nd = new Node(l_nwDt);
+                qDebug() << "(ling) [Parser] Node generated." << endl;
             } else {
-		qDebug() << "(ling) [Parser] Node creation cancelled." << endl;
-		p_nd = NULL;
-	    }
-	}
+                qDebug() << "(ling) [Parser] Node creation cancelled." << endl;
+                p_nd = NULL;
+            }
+        }
 
         NodeList Parser::formNodes ( QStringList const &p_tokens ) {
             NodeList l_theNodes;
@@ -369,11 +369,11 @@ namespace Wintermute {
 
             return l_theNode;
         }
-        
+
         void Parser::doUnwindingProgressStep() {
             m_prg += 1;
         }
-        
+
         /// @todo Find a means of reporting progress from this method; this method can end up becoming extremely time-consuming.
         NodeTree Parser::expandNodes ( NodeTree& p_tree, const int& p_size, const int& p_level ) {
             if ( p_level == p_tree.size () ){
@@ -416,16 +416,16 @@ namespace Wintermute {
          *  @note This method uses the formula for determining the maximum amount of paths.
          *      The formula for determining the length is:
          *      f(w) = (W1) * (W2) * ... (Wn)
-         *      
+         *
          *      where w is the number of words passed,
          *            W1, W2, .. , Wn is the total number of path that are represented by that node and,
          *            f(w) represents the resulting number of paths.
-         *            
+         *
          *      i.e: "We are boys" => 2,3,2.
-         *      
+         *
          *      p = W1 * W2 * W3
          *        =  2 *  3 *  2
-         *        = 12         
+         *        = 12
          */
         NodeTree Parser::expandNodes ( const NodeList &p_ndVtr ) {
             int l_totalPaths = 1;

@@ -27,7 +27,7 @@
 #include <map>
 #include <QString>
 #include <QStringList>
-#include <models.hpp>
+#include <plugins/data/wntrdata.hpp>
 #include "syntax.hpp"
 
 using namespace std;
@@ -536,14 +536,14 @@ namespace Wintermute {
                 int m_prgMax;
 
             private:
-            
+
                 /**
                  * @brief Processes the text for parsing.
                  * @fn process
                  * @param p_txt The text to be parsed.
                  */
                 const Meaning* process ( const QString& );
-                
+
                 /**
                  * @brief Breaks up the text into tokens to be used by the parser.
                  * @fn getTokens
@@ -551,7 +551,7 @@ namespace Wintermute {
                  * @todo Return TokenList instead of QStringList.
                  */
                 QStringList getTokens ( const QString & );
-                
+
                 /**
                  * @brief Forms a Node from the text specified.
                  * @fn formNode
@@ -559,7 +559,7 @@ namespace Wintermute {
                  * @todo Use Token instead of QString.
                  */
                 Node* formNode( const QString& );
-                
+
                 /**
                  * @brief Generates a list of Nodes from the list of tokens specified.
                  * @fn formNodes
@@ -568,14 +568,14 @@ namespace Wintermute {
                  * @todo Use TokenList instead of QStringList.
                  */
                 NodeList formNodes ( const QStringList& );
-                
+
                 /**
                  * @brief
                  * @fn expandNodes
                  * @param
                  */
                 NodeTree expandNodes ( NodeList const & );
-                
+
                 /**
                  * @brief
                  * @fn expandNodes
@@ -597,7 +597,7 @@ namespace Wintermute {
                  * @param
                  */
                 static const QString formShorthand ( const NodeList& , const Node::FormatVerbosity& = Node::FULL );
-                
+
                 void doUnwindingProgressStep();
 
             private slots:

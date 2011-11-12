@@ -25,7 +25,7 @@
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <ontology.hpp>
+#include <plugins/data/ontology.hpp>
 
 using namespace std;
 using namespace Wintermute::Linguistics;

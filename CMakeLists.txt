@@ -11,14 +11,7 @@ set(WNTRLING_VERSION
 
 ## Packages
 find_package(Wintermute 0.01 REQUIRED)
-
-find_file(WDATACMAKE PATHS /usr/share/cmake/WntrData/WntrDataConfig.cmake)
-if (WDATACMAKE-NOTFOUND)
-    find_package(WntrData 0.01 REQUIRED)
-elseif()
-    include("/usr/share/cmake/WntrData/WntrDataConfig.cmake")
-endif(WDATACMAKE-NOTFOUND)
-
+find_package(WntrData 0.01 REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
 find_package(Boost 1.46 REQUIRED)
 find_package(Qt4 REQUIRED)
