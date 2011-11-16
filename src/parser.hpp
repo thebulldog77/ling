@@ -27,7 +27,7 @@
 #include <map>
 #include <QString>
 #include <QStringList>
-#include <wntr/data/models.hpp>
+#include <plugins/data/wntrdata.hpp>
 #include "syntax.hpp"
 
 using namespace std;
@@ -274,8 +274,8 @@ namespace Wintermute {
          */
         class Rule : public QObject {
             Q_OBJECT
-            Q_PROPERTY(string type READ type)
-            Q_PROPERTY(string locale READ locale)
+            Q_PROPERTY(QString type READ type)
+            Q_PROPERTY(QString locale READ locale)
 
             friend class RuleSet;
             public:
@@ -322,13 +322,13 @@ namespace Wintermute {
                  * @brief Returns a string representing the type of nodes that this Rule looks for.
                  * @fn type
                  */
-                const string type() const;
+                const QString type() const;
                 /**
                  * @brief
                  *
                  * @fn locale
                  */
-                const string locale() const;
+                const QString locale() const;
                 /**
                  * @brief Determines if a Node is qualified to use this Rule.
                  * @fn appliesFor
@@ -494,75 +494,88 @@ namespace Wintermute {
                  * @fn Parser
                  * @param p_prsr The Parser to be copied.
                  */
-                explicit Parser( const Parser& p_prsr ) : m_lcl(p_prsr.m_lcl) {}
+                Parser( const Parser& p_prsr ) : m_lcl(p_prsr.m_lcl) {}
 
                 /**
-                 * @brief
+                 * @brief Default constructor.
                  * @fn Parser
-                 * @param
+                 * @param p_lcl The locale for the parser to use (default is Wintermute's default locale).
                  */
-                Parser ( const QString& = Wintermute::Data::Linguistics::System::locale ()  );
+                explicit Parser ( const QString& = Wintermute::Data::Linguistics::System::locale ()  );
 
                 /**
-                 * @brief
+                 * @brief Deconstructor.
                  * @fn ~Parser
                  */
                 ~Parser() { }
 
                 /**
-                 * @brief
+                 * @brief Returns the locale of the Parser.
                  * @fn locale
                  */
                 const QString locale() const;
 
                 /**
-                 * @brief
+                 * @brief Changes the locale of the Parser.
                  * @fn setLocale
-                 * @param
+                 * @param p_lcl The locale to be used by the Parser.
+                 * @todo Prevent this value from being changed while parsing's active; it can cause malformed data to be generated.
                  */
                 void setLocale ( const QString& = Wintermute::Data::Linguistics::System::locale ());
 
                 /**
-                 * @brief
+                 * @brief Parses user text into a semantic representation of its underlying meaning.
                  * @fn parse
-                 * @param
+                 * @param p_txt The text to be parsed.
                  */
                 void parse ( const QString& );
 
             protected:
                 mutable QString m_lcl;
+                int m_prg;
+                int m_prgMax;
 
             private:
+
                 /**
-                 * @brief
+                 * @brief Processes the text for parsing.
                  * @fn process
-                 * @param
+                 * @param p_txt The text to be parsed.
                  */
-                const Meaning* process ( const string& );
+                const Meaning* process ( const QString& );
+
                 /**
-                 * @brief
+                 * @brief Breaks up the text into tokens to be used by the parser.
                  * @fn getTokens
-                 * @param
+                 * @param p_txt The text to be broken up.
+                 * @todo Return TokenList instead of QStringList.
                  */
-                QStringList getTokens ( string const & );
+                QStringList getTokens ( const QString & );
+
                 /**
-                 * @brief
+                 * @brief Forms a Node from the text specified.
                  * @fn formNode
-                 * @param
+                 * @param p_ndTxt The symbolic representation of a Node.
+                 * @todo Use Token instead of QString.
                  */
-                Node* formNode( QString const & );
+                Node* formNode( const QString& );
+
                 /**
-                 * @brief
+                 * @brief Generates a list of Nodes from the list of tokens specified.
                  * @fn formNodes
-                 * @param
+                 * @param p_txtLst The list of tokens to be Node-ified.
+                 * @see formNode
+                 * @todo Use TokenList instead of QStringList.
                  */
-                NodeList formNodes ( QStringList const & );
+                NodeList formNodes ( const QStringList& );
+
                 /**
                  * @brief
                  * @fn expandNodes
                  * @param
                  */
                 NodeTree expandNodes ( NodeList const & );
+
                 /**
                  * @brief
                  * @fn expandNodes
@@ -583,7 +596,9 @@ namespace Wintermute {
                  * @param
                  * @param
                  */
-                static const string formShorthand ( const NodeList& , const Node::FormatVerbosity& = Node::FULL );
+                static const QString formShorthand ( const NodeList& , const Node::FormatVerbosity& = Node::FULL );
+
+                void doUnwindingProgressStep();
 
             private slots:
                 void generateNode(Node*);

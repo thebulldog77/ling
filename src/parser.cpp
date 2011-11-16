@@ -19,13 +19,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * @endlegalese
  *
- * @todo Add signals (binded and bindFailed).
  */
 
 #include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <wntrdata.hpp>
+#include <plugins/data/wntrdata.hpp>
 #include <iostream>
 #include <iomanip>
 #include <QFile>
@@ -48,13 +47,13 @@ namespace Wintermute {
         Token::Token(const Token& p_tok) : m_prfx(p_tok.m_prfx), m_sffx(p_tok.m_sffx), m_data(p_tok.m_data) { }
         Token::Token(const QString& p_tokStr) : m_prfx(), m_sffx(), m_data() { __init(p_tokStr); }
 
-        /// @todo Make this method more precise, if possible.
+        /// @todo Implement a means of increasing the precision when dissecting strings.
         void Token::__init(const QString& p_tokStr){
             int mode = 0;
             foreach (const QChar l_chr, p_tokStr){
                 switch (mode){
                     case 0: {
-                        // prefix
+                        /// Prefix symbol
                         if (!l_chr.isLetterOrNumber())
                             m_prfx += l_chr;
                         else {
@@ -64,7 +63,7 @@ namespace Wintermute {
                     } break;
 
                     case 1: {
-                        // symbol
+                        /// Root symbol
                         if (l_chr.isLetterOrNumber())
                             m_data += l_chr;
                         else {
@@ -74,7 +73,7 @@ namespace Wintermute {
                     } break;
 
                     case 2: {
-                        // suffix
+                        /// Suffix symbol
                         m_sffx += l_chr;
                     } break;
                 }
@@ -108,17 +107,16 @@ namespace Wintermute {
             return m_bnd.attribute (p_attr);
         }
 
-        /// @todo This method needs to match with more precision.
+        /// @todo This method needs to match each Node to the Bond with more precision.
         const double Binding::canBind ( const Node &p_ndSrc, const Node& p_ndDst ) const {
             if ( this->parentRule ()->appliesFor ( p_ndSrc ) == 0.0 )
                 return 0.0;
 
             double l_rtn = 0.0;
-            const QString l_wh = m_bnd.attribute ( "with" );
-            const QString l_has = m_bnd.attribute( "has" );
-            const QString l_hasAll = m_bnd.attribute( "hasAll" );
-            const QString l_ndDestStr = QString::fromStdString (p_ndDst.toString ( Node::EXTRA ));
-            const QString l_ndSrcStr = QString::fromStdString (p_ndSrc.toString ( Node::EXTRA ));
+            const QString l_wh = m_bnd.attribute ( "with" ), l_has = m_bnd.attribute( "has" ),
+                          l_hasAll = m_bnd.attribute( "hasAll" ), l_ndDestStr = p_ndDst.toString ( Node::EXTRA ),
+                          l_ndSrcStr = p_ndSrc.toString ( Node::EXTRA );
+
             const QStringList l_options = l_wh.split ( "," );
 
             foreach (const QString l_s, l_options) {
@@ -175,36 +173,36 @@ namespace Wintermute {
             return l_rtn;
         }
 
-        /// @note This is where the attribute 'linkAction' is defined.
         const Link* Binding::bind ( const Node& p_nd1, const Node& p_nd2 ) const {
             if (!canBind(p_nd1,p_nd2)){
                 emit bindFailed(const_cast<Binding*>(this),&p_nd1,&p_nd2);
                 return NULL;
             }
 
-            QString l_type = QString::fromStdString (this->parentRule ()->type ());
-            QString l_lcl = QString::fromStdString (this->parentRule ()->locale());
+            QString l_type = this->parentRule ()->type ();
+            QString l_lcl = this->parentRule ()->locale();
             Node *l_nd = const_cast<Node*> ( &p_nd1 ), *l_nd2 = const_cast<Node*> ( &p_nd2 );
 
             if (m_bnd.hasAttribute ("linkAction")){
                 const QStringList l_options = m_bnd.attribute ("linkAction").split (",");
 
                 if (l_options.contains ("reverse")) {
-                    l_type = QString::fromStdString (p_nd2.toString ( Node::MINIMAL )).at (0);
+                    l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
                     l_lcl = p_nd2.locale ();
                     Node *l_tmp = l_nd;
                     l_nd = l_nd2;
                     l_nd2 = l_tmp;
-                } else if (l_options.contains ("othertype")){
-                    l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
-                } else if (l_options.contains ("thistype")){
-                    l_type = p_nd1.toString ( Node::MINIMAL ).at (0);
                 }
+
+                if (l_options.contains ("othertype"))
+                    l_type = p_nd2.toString ( Node::MINIMAL ).at (0);
+                else if (l_options.contains ("thistype"))
+                    l_type = p_nd1.toString ( Node::MINIMAL ).at (0);
             }
 
             emit binded(this,&p_nd1,&p_nd2);
-            qDebug() << "(ling) [Binding] Link formed: " << p_nd1.toString (Node::EXTRA).c_str () << " " << p_nd2.toString (Node::EXTRA).c_str ();
-            return Link::form ( *&l_nd, *&l_nd2 , l_type.toStdString () , l_lcl.toStdString () );
+            qDebug() << "(ling) [Binding] Link formed: " << p_nd1.toString (Node::EXTRA) << p_nd2.toString (Node::EXTRA);
+            return Link::form ( *&l_nd, *&l_nd2 , l_type , l_lcl );
         }
 
         const Rule* Binding::parentRule () const {
@@ -220,6 +218,7 @@ namespace Wintermute {
                 m_bndVtr.push_back ((new Binding(l_bnd,this)));
         }
 
+        /// @todo Have this method use D-Bus to obtain that Chain value.
         const Rule* Rule::obtain ( const Node& p_nd ) {
             const QString l_lcl = p_nd.locale ();
             const QString l_flg = p_nd.flags ().begin ().value ();
@@ -270,22 +269,21 @@ namespace Wintermute {
                 }
             }
 
-            qDebug() << "(ling) [Rule] No bindings found for" << QString::fromStdString(p_nd.toString(Node::EXTRA)) << "to" << QString::fromStdString(p_nd2.toString(Node::EXTRA));
+            qDebug() << "(ling) [Rule] No bindings found for" << p_nd.toString(Node::EXTRA) << "to" << p_nd2.toString(Node::EXTRA);
             return NULL;
         }
 
-        /// @todo This method needs to match with more precision.
         const double Rule::appliesFor ( const Node& p_nd ) const {
-            const QString l_ndStr ( p_nd.toString ( Node::EXTRA ).c_str () );
-            const QString l_rlStr ( type().c_str () );
-            const double l_rtn = Rules::Bond::matches(l_ndStr,l_rlStr);
+            const QString l_ndStr ( p_nd.toString ( Node::EXTRA ) );
+            const QString l_rlStr ( type() );
+            const double l_rtn = Rules::Bond::matches( l_ndStr , l_rlStr );
 
             return l_rtn;
         }
 
-        const string Rule::type() const { return m_chn.type ().toStdString (); }
+        const QString Rule::type() const { return m_chn.type (); }
 
-        const string Rule::locale () const { return m_chn.locale().toStdString(); }
+        const QString Rule::locale () const { return m_chn.locale(); }
 
         Parser::Parser ( const QString& p_lcl ) : m_lcl ( p_lcl ) { }
 
@@ -297,9 +295,9 @@ namespace Wintermute {
             m_lcl = p_lcl;
         }
 
-        QStringList Parser::getTokens ( const string &p_str ) {
+        QStringList Parser::getTokens ( const QString &p_str ) {
             QStringList l_strLst;
-            foreach(const Token* l_tkn, Token::form(QString::fromStdString(p_str))){
+            foreach(const Token* l_tkn, Token::form(p_str)){
                 const QString l_fullSuffix = Lexical::Cache::obtainFullSuffix(locale(),l_tkn->suffix());
                 l_strLst << l_tkn->symbol();
 
@@ -310,7 +308,7 @@ namespace Wintermute {
             return l_strLst;
         }
 
-        /// @todo Move this method from this library to the core application.
+        /// @todo Remove this method (but salvage the algorithm for saving a node). [Use it in ncurses-wintermute.]
         void Parser::generateNode(Node* p_nd){
             cout << "(ling) [Parser] Encountered unrecognizable word (" << p_nd->symbol ().toStdString () << "). " << endl
                  << setw(5) << right << setfill(' ')
@@ -333,15 +331,15 @@ namespace Wintermute {
                     l_ln = l_iStrm.readLine ();
                 }
 
-				Lexical::Data l_nwDt(Lexical::Data::idFromString(p_nd->symbol()), locale(), p_nd->symbol(), l_dtmp);
-				Lexical::Cache::write(l_nwDt);
-				p_nd = new Node(l_nwDt);
-				qDebug() << "(ling) [Parser] Node generated." << endl;
-			} else {
-				qDebug() << "(ling) [Parser] Node creation cancelled." << endl;
-				p_nd = NULL;
-			}
-		}
+                Lexical::Data l_nwDt(Lexical::Data::idFromString(p_nd->symbol()), locale(), p_nd->symbol(), l_dtmp);
+                Lexical::Cache::write(l_nwDt);
+                p_nd = new Node(l_nwDt);
+                qDebug() << "(ling) [Parser] Node generated." << endl;
+            } else {
+                qDebug() << "(ling) [Parser] Node creation cancelled." << endl;
+                p_nd = NULL;
+            }
+        }
 
         NodeList Parser::formNodes ( QStringList const &p_tokens ) {
             NodeList l_theNodes;
@@ -358,12 +356,11 @@ namespace Wintermute {
         }
 
         Node* Parser::formNode( const QString &p_symbol ){
-            const string l_theID = Lexical::Data::idFromString (p_symbol).toStdString();
-            Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl.toStdString(),l_theID));
+            const QString l_theID = Lexical::Data::idFromString (p_symbol);
+            Node* l_theNode = const_cast<Node*>(Node::obtain (m_lcl,l_theID));
 
-            if ( !Node::exists (m_lcl.toStdString(),l_theID) ) {
-                string l_sym(p_symbol.toStdString ());
-                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl.toStdString() , l_sym ));
+            if ( !Node::exists (m_lcl,l_theID) ) {
+                l_theNode = const_cast<Node*>(Node::buildPseudo ( m_lcl, p_symbol ));
                 emit foundPseduoNode(l_theNode);
             }
 
@@ -373,12 +370,14 @@ namespace Wintermute {
             return l_theNode;
         }
 
+        void Parser::doUnwindingProgressStep() {
+            m_prg += 1;
+        }
+
         /// @todo Find a means of reporting progress from this method; this method can end up becoming extremely time-consuming.
         NodeTree Parser::expandNodes ( NodeTree& p_tree, const int& p_size, const int& p_level ) {
-            // Salvaged this method's algorithm from an older version of the parser.
-
             if ( p_level == p_tree.size () ){
-                qDebug() << "(ling) Flag unwinding complete.";
+                qDebug() << "(ling) Cannot unwind anymore.";
                 return ( NodeTree() );
             }
 
@@ -393,17 +392,19 @@ namespace Wintermute {
             const int l_mxSize = p_size / l_curBranch.size ( );
             NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
 
-           foreach (Node* l_curLvlNd, l_curBranch){
+            foreach (Node* l_curLvlNd, l_curBranch){
                 if ( !isAtEnd ) {
                     foreach (NodeList l_curLst, l_foundStems){
-                        NodeList l_tmpLst; // creates the current vector (1 of x, x = l_curBranch.size();
+                        NodeList l_tmpLst; // creates the current vector [1 of x, x = l_curBranch.size()];
                         l_tmpLst << l_curLvlNd << l_curLst;
                         l_chldBranches << l_tmpLst; // add this current branch to list.
+                        doUnwindingProgressStep();
                     }
                 } else { // the end of the line!
                     NodeList l_tmpLst;
                     l_tmpLst << l_curLvlNd;
                     l_chldBranches << l_tmpLst; // add this current branch to list.
+                    doUnwindingProgressStep();
                 }
            }
 
@@ -411,7 +412,22 @@ namespace Wintermute {
             return l_chldBranches;
         }
 
-        NodeTree Parser::expandNodes ( NodeList const &p_ndVtr ) {
+        /**
+         *  @note This method uses the formula for determining the maximum amount of paths.
+         *      The formula for determining the length is:
+         *      f(w) = (W1) * (W2) * ... (Wn)
+         *
+         *      where w is the number of words passed,
+         *            W1, W2, .. , Wn is the total number of path that are represented by that node and,
+         *            f(w) represents the resulting number of paths.
+         *
+         *      i.e: "We are boys" => 2,3,2.
+         *
+         *      p = W1 * W2 * W3
+         *        =  2 *  3 *  2
+         *        = 12
+         */
+        NodeTree Parser::expandNodes ( const NodeList &p_ndVtr ) {
             int l_totalPaths = 1;
             NodeTree l_metaTree;
 
@@ -443,9 +459,9 @@ namespace Wintermute {
             }
         }
 
-        /// @todo Determine a means of generating unique signatures.
-        const string Parser::formShorthand ( const NodeList& p_ndVtr, const Node::FormatVerbosity& p_sigVerb ) {
-            string l_ndShrthnd;
+        /// @todo Determine a means of generating unique signatures for each set of Nodes (to reduce the unwinding time).
+        const QString Parser::formShorthand ( const NodeList& p_ndVtr, const Node::FormatVerbosity& p_sigVerb ) {
+            QString l_ndShrthnd;
 
             for ( NodeList::const_iterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); ++itr ) {
                 const Node* l_nd = *itr;
@@ -455,7 +471,7 @@ namespace Wintermute {
             return l_ndShrthnd;
         }
 
-        /// @todo When parsing multiple sentences back-to-back; we need to implement a means of maintaining context.
+        /// @todo When parsing multiple sentences back-to-back; we need to implement a means of maintaining context. [Can't be done without implementing context ;)]
         void Parser::parse ( const QString& p_txt ) {
             QTextStream l_strm(p_txt.toLocal8Bit (),QIODevice::ReadOnly);
             MeaningList l_mngVtr;
@@ -468,7 +484,7 @@ namespace Wintermute {
                     if (l_sentences.front () != l_sentence)
                         qDebug() << "Parsing next sentence...";
 
-                    Meaning* l_mng = const_cast<Meaning*>( process ( l_sentence.toStdString() ) );
+                    Meaning* l_mng = const_cast<Meaning*>( process ( l_sentence ) );
 #if 0
                     if (!l_mngVtr.isEmpty ())
                         l_mng->connectWith(l_mngVtr.last ());
@@ -482,7 +498,7 @@ namespace Wintermute {
         }
 
         /// @todo Obtain the one meaning that represents the entire parsed text.
-        const Meaning* Parser::process ( const string& p_txt ) {
+        const Meaning* Parser::process ( const QString& p_txt ) {
             QStringList l_tokens = getTokens ( p_txt );
             NodeList l_theNodes = formNodes ( l_tokens );
             NodeTree l_nodeTree = expandNodes ( l_theNodes );

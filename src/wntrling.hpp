@@ -38,11 +38,10 @@
 #include "parser.hpp"
 #include "meanings.hpp"
 #include "adaptors.hpp"
-#include <wntr/plugins.hpp>
-#include <QtPlugin>
 #include <QObject>
+#include <wntr/plugins.hpp>
 
-using Wintermute::Plugin::AbstractPlugin;
+using Wintermute::Plugins::AbstractPlugin;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -50,8 +49,10 @@ namespace Wintermute {
         struct Plugin;
 
         /**
-         * @brief
-         *
+         * @brief Represents a maintence class for Wintermute's linguistics.
+         * The System object (as commonly used throughout Wintermute) handles the
+         * nitty-gritty work of starting up, cleaning up and shutting down the objects
+         * required for optimal natural language intepretative peformance to occur.
          * @class System wntrling.hpp "src/wntrling.hpp"
          */
         class System : public QObject {
@@ -62,8 +63,7 @@ namespace Wintermute {
                 static System* s_sys; /**< The internal instance. */
                 Parser* m_prs; /**< The global parser instance. */
                 /**
-                 * @brief
-                 *
+                 * @brief Destructor.
                  * @fn System
                  */
                 System();
@@ -71,24 +71,21 @@ namespace Wintermute {
 
             signals:
                 /**
-                 * @brief
-                 *
+                 * @brief Emitted when the System is online.
                  * @fn started
                  */
                 void started();
 
                 /**
-                 * @brief
-                 *
+                 * @brief Emitted when the System is offline.
                  * @fn stopped
                  */
                 void stopped();
 
                 /**
-                 * @brief
-                 *
+                 * @brief Emitted when a response is generated.
                  * @fn responseFormed
-                 * @param
+                 * @param p_rpsn The response formed by Wintermute.
                  */
                 void responseFormed(const QString&);
 
@@ -124,17 +121,17 @@ namespace Wintermute {
                 static void tellSystem(const QString& );
         };
 
-       class Plugin : public AbstractPlugin {
-            Q_OBJECT
-            public:
-                Plugin() : AbstractPlugin() { }
-                ~Plugin() { }
-                Plugin(Plugin const &k) : AbstractPlugin(k) { }
+        class Plugin : public AbstractPlugin {
+             Q_OBJECT
+             public:
+                 Plugin() : AbstractPlugin() { }
+                 ~Plugin() { }
+                 Plugin(Plugin const &k) : AbstractPlugin(k) { }
 
-                virtual void initialize() const;
-                virtual void deinitialize() const;
-                virtual QObject* instance() const;
-        };
+                 virtual void initialize() const;
+                 virtual void deinitialize() const;
+                 virtual QObject* instance() const;
+         };
     }
 }
 
