@@ -1,10 +1,14 @@
 ## Wintermute's Linguistics API
 
+[Plugin]
+Enabled=true
+Type=API
+
 [Version]
 Plugin=@WNTRLING_VERSION@
 UUID=@WNTRLING_UUID@
 Compat=@Wintermute_VERSION@
-Library=wntrling
+Library=wintermute-plugin-linguistics
 
 [Description]
 Name=Linguistics API

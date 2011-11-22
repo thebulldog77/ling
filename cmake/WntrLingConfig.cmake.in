@@ -12,4 +12,4 @@ set(WNTRLING_LIBRARY_DIRS "@WNTRLING_LIB_DIR@")
 include("@WNTRLING_CMAKE_DIR@/WntrLingLibraryDepends.cmake")
 
 # These are IMPORTED targets created by WntrDataLibraryDepends.cmake
-set(WNTRLING_LIBRARIES wntrling)
+set(WNTRLING_LIBRARIES wintermute-plugin-linguistics)
