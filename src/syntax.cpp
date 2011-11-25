@@ -26,6 +26,7 @@
 #include <QtDBus/QDBusConnection>
 #include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
+#include <data/config.hpp>
 
 using namespace boost;
 
@@ -138,9 +139,10 @@ namespace Wintermute {
         }
 
         const bool Node::exists ( const QString& p_lcl, const QString& p_id ) {
+            qDBusRegisterMetaType<Lexical::Data>();
             Lexical::Data l_dt(p_id,p_lcl);
             QVariant l_vrnt = QVariant::fromValue(l_dt);
-            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
+            QDBusMessage l_call = QDBusMessage::createMethodCall (WNTRDATA_DBUS_SERVICE,"/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
             l_call << l_vrnt;
             qDebug() << "(ling) [Node] <exists>" << p_lcl;
             QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
@@ -149,9 +151,10 @@ namespace Wintermute {
                 qDebug() << "(data) [Node] Unable to determine existance of" << p_id << p_lcl << ":"
                          << l_reply.errorMessage ();
             } else if (l_reply.type () == QDBusMessage::ReplyMessage){
-                const bool l_rlpy = l_reply.arguments ().at (0).toBool ();
-                qDebug() << "(ling) [Node] Exists:"<< l_rlpy;
-                return l_rlpy;
+                qDebug() << l_reply;
+                //const bool l_rlpy = l_reply
+                //qDebug() << "(ling) [Node] Exists:"<< l_rlpy;
+                //return l_rlpy;
             }
 
             return false;

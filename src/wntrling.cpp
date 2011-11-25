@@ -54,16 +54,16 @@ namespace Wintermute {
             emit s_sys->responseFormed(p_txt);
         }
 
-        void Plugin::initialize () const {
-            connect(Wintermute::Core::instance (),SIGNAL(started()),Wintermute::Linguistics::System::instance (),SLOT(start()));
-            connect(Wintermute::Core::instance (),SIGNAL(stopped()),Wintermute::Linguistics::System::instance (),SLOT(stop()));
+        void Plugin::start () const {
+            connect(this,SIGNAL(started()),Wintermute::Linguistics::System::instance (),SLOT(start()));
+            connect(this,SIGNAL(stopped()),Wintermute::Linguistics::System::instance (),SLOT(stop()));
 
             Linguistics::SystemAdaptor* l_adpt = new Linguistics::SystemAdaptor;
 
             Wintermute::IPC::System::registerObject ("/System" , l_adpt);
         }
 
-        void Plugin::deinitialize () const {
+        void Plugin::stop () const {
         }
 
         QObject* Plugin::instance () const { return System::instance(); }
