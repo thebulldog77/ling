@@ -33,7 +33,11 @@ namespace Wintermute {
             if (System::s_sys)
                 System::s_sys->deleteLater ();
 
+            connect(this,SIGNAL(started()),Data::System::instance(),SLOT(start()));
+            connect(this,SIGNAL(stopped()),Data::System::instance(),SLOT(stop()));
+
             System::s_sys = this;
+
         }
 
         System::~System () { m_prs->deleteLater (); }
@@ -45,7 +49,9 @@ namespace Wintermute {
             return s_sys;
         }
 
-        void System::start () { emit s_sys->started (); }
+        void System::start () {
+            emit s_sys->started ();
+        }
 
         void System::stop () { emit s_sys->stopped (); }
 

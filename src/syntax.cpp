@@ -27,6 +27,8 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/tokenizer.hpp>
 #include <data/config.hpp>
+#include <data/interfaces.hpp>
+#include <wntr/ipc.hpp>
 
 using namespace boost;
 
@@ -77,87 +79,41 @@ namespace Wintermute {
             }
         }
 
-        Node* Node::create( const Lexical::Data& p_lxdt ){
-            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","write");
-            l_call << QVariant::fromValue(p_lxdt);
-            qDebug() << l_call;
-            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
-
-            if (l_reply.type () == QDBusMessage::ReplyMessage){
-                const Lexical::Data l_lxdt = l_reply.arguments ().at (0).value<Lexical::Data>();
-                Lexical::Cache::write (l_lxdt);
-                qDebug() << QVariant::fromValue<Lexical::Data>(l_lxdt);
-                return Node::obtain ( l_lxdt.locale (), l_lxdt.id () );
-            } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
-                qDebug() << "(ling) [Node] Error creaing Node data over D-Bus."
-                         << l_reply.errorMessage ();
-                return NULL;
-            }
-
-            return NULL;
+        Node* Node::create( const Lexical::Data& p_dt ){
+            qDebug() << "(ling) [Node] Created node for" << p_dt.id() << ".";
+            Data::NodeInterface* l_ndInt = new Data::NodeInterface;
+            QDBusPendingReply<Lexical::Data> l_replyDt = l_ndInt->write(p_dt);
+            l_replyDt.waitForFinished();
+            const Lexical::Data l_dt = l_replyDt.value();
+            return Node::obtain ( l_dt.locale (), l_dt.id () );
         }
 
         Node* Node::obtain ( const QString& p_lcl, const QString& p_id ) {
             Lexical::Data l_dt( p_id , p_lcl );
 
             if ( exists ( p_lcl , p_id ) ) {
-                QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","read");
-                l_call << QVariant::fromValue(l_dt);
-                qDebug() << l_call;
-                QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
-                if (l_reply.type () == QDBusMessage::ReplyMessage){
-                    l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
-                    qDebug() << QVariant::fromValue<Lexical::Data>(l_dt);
-                    return new Node ( l_dt );
-                } else if (l_reply.type () == QDBusMessage::ErrorMessage) {
-                    qDebug() << "(ling) [Node] Error obtaining Node data from over D-Bus."
-                             << l_reply.errorMessage ();
-                }
+                Data::NodeInterface* l_ndInt = new Data::NodeInterface;
+                l_ndInt->read(l_dt);
+                return new Node ( l_dt );
             }
 
             return NULL;
         }
 
         Node* Node::buildPseudo ( const QString& p_lcl, const QString& p_sym ) {
-            Lexical::Data l_dt("",p_lcl,p_sym);
-            QDBusMessage l_call = QDBusMessage::createMethodCall ("org.thesii.Wintermute.Data","/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","pseudo");
-            l_call << QVariant::fromValue(l_dt);
-            qDebug() << l_call;
-            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
-
-            if (l_reply.type () == QDBusMessage::ErrorMessage){
-                qDebug() << "(data) [Node] Unable to obtain a psuedo node for the" << p_lcl
-                         << "locale of the word" << p_sym << "."
-                         <<  l_reply.errorMessage ();
-                return NULL;
-            } else if (l_reply.type () == QDBusMessage::ReplyMessage){
-                l_dt = l_reply.arguments ().at (0).value<Lexical::Data>();
-                qDebug() << QVariant::fromValue<Lexical::Data>(l_dt);
-            }
-
+            qDebug() << "(ling) [Node] Built pseudo-node for" << p_sym;
+            Lexical::Data l_dt("" , p_lcl , p_sym);
+            qDebug() << l_dt;
+            Data::NodeInterface* l_ndInt = new Data::NodeInterface;
+            //l_dt = l_ndInt->psuedo(l_dt);
             return new Node ( l_dt );
         }
 
         const bool Node::exists ( const QString& p_lcl, const QString& p_id ) {
-            qDBusRegisterMetaType<Lexical::Data>();
+            Data::System::registerDataTypes();
             Lexical::Data l_dt(p_id,p_lcl);
-            QVariant l_vrnt = QVariant::fromValue(l_dt);
-            QDBusMessage l_call = QDBusMessage::createMethodCall (WNTRDATA_DBUS_SERVICE,"/Nodes","org.thesii.Wintermute.Data.NodeAdaptor","exists");
-            l_call << l_vrnt;
-            qDebug() << "(ling) [Node] <exists>" << p_lcl;
-            QDBusMessage l_reply = QDBusConnection::sessionBus ().call(l_call,QDBus::BlockWithGui);
-
-            if (l_reply.type () == QDBusMessage::ErrorMessage){
-                qDebug() << "(data) [Node] Unable to determine existance of" << p_id << p_lcl << ":"
-                         << l_reply.errorMessage ();
-            } else if (l_reply.type () == QDBusMessage::ReplyMessage){
-                qDebug() << l_reply;
-                //const bool l_rlpy = l_reply
-                //qDebug() << "(ling) [Node] Exists:"<< l_rlpy;
-                //return l_rlpy;
-            }
-
-            return false;
+            Data::NodeInterface* l_ndInt = new Data::NodeInterface;
+            return l_ndInt->exists(l_dt);
         }
 
         Node* Node::form ( const Lexical::Data l_dt ) {

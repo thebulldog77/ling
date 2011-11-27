@@ -212,14 +212,14 @@ namespace Wintermute {
                 }
 
                 /**
-                 * @brief Determines if the Node is 'psuedo'.
+                 * @brief Determines if the Node is 'pseudo'.
                  *
-                 * Some nodes can be psuedo-nodes, meaning that their real meaning is unknown
-                 * to a Parser. Psuedo nodes contain the locale it was detected in, and its
+                 * Some nodes can be pseudo-nodes, meaning that their real meaning is unknown
+                 * to a Parser. Pseudo nodes contain the locale it was detected in, and its
                  * symbol. Typically, the ID and its flags are internally reserved for such a Node.
                  *
                  * @fn isPseudo
-                 * @return 'true' if the flags and ID are psuedo-worthy, returns 'false' otherwise.
+                 * @return 'true' if the flags and ID are pseudo-worthy, returns 'false' otherwise.
                  */
                 Q_INVOKABLE inline const bool isPseudo() const {
                     return Lexical::Cache::isPseudo (m_lxdt);
@@ -286,12 +286,12 @@ namespace Wintermute {
                 static Node* fromString ( const QString& );
 
                 /**
-                 * @brief Builds a psuedo-Node with the specified locale and symbol.
+                 * @brief Builds a pseudo-Node with the specified locale and symbol.
                  * @fn buildPseudo
                  * @param p_lcl The locale to use.
                  * @param p_sym The symbol of the Node.
-                 * @return A Node representing the psuedo-Node, or NULL if no pseudo-Nodes could be formed.
-                 * @todo Check if this Node exists. If it does, return that instead of forming a psuedo-Node.
+                 * @return A Node representing the pseudo-Node, or NULL if no pseudo-Nodes could be formed.
+                 * @todo Check if this Node exists. If it does, return that instead of forming a pseudo-Node.
                  */
                 static Node* buildPseudo ( const QString&, const QString& );
 
