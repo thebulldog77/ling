@@ -226,8 +226,10 @@ namespace Wintermute {
             const QString l_flg = p_nd.flags ().begin ().value ().toString();
             RuleInterface* l_int = new RuleInterface;
             Rules::Chain l_chn(l_lcl,l_flg);
-            QDBusPendingReply<QString> l_reply = l_int->read(l_chn);
-            //Rules::Cache::read (l_chn);
+            QDBusPendingReply<QString> l_reply = l_int->read(l_chn);            
+            l_reply.waitForFinished();
+            qDebug() << l_reply;
+            l_chn = Rules::Chain::fromString(l_reply);
             return new Rule(l_chn);
         }
 
