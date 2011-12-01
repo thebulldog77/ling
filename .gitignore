@@ -4,3 +4,4 @@ doc
 *.kdev4
 CMakeLists.txt.user*
 src/config.hpp
+debian
