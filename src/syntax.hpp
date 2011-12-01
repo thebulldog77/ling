@@ -24,12 +24,12 @@
 
 #include <QMap>
 #include <QList>
+#include <QVariantMap>
 #include <plugins/data/wntrdata.hpp>
 
 using namespace Wintermute::Data::Linguistics;
 
 using Wintermute::Data::Linguistics::Lexical::Data;
-using Wintermute::Data::Linguistics::Lexical::FlagMapping;
 
 namespace Wintermute {
     namespace Linguistics {
@@ -91,7 +91,7 @@ namespace Wintermute {
             Q_PROPERTY(const QString locale READ locale)
             Q_PROPERTY(const QString symbol READ symbol)
             Q_PROPERTY(const QString value READ toString)
-            Q_PROPERTY(const FlagMapping flags READ flags)
+            Q_PROPERTY(const QVariantMap flags READ flags)
             Q_PROPERTY(const Data* data READ data)
             Q_ENUMS(FormatVerbosity)
 
@@ -185,7 +185,7 @@ namespace Wintermute {
                  * @fn flags
                  * @return The flags of the Node.
                  */
-                Q_INVOKABLE inline const FlagMapping flags() const {
+                Q_INVOKABLE inline const QVariantMap flags() const {
                     return m_lxdt.flags ();
                 }
 
@@ -201,7 +201,7 @@ namespace Wintermute {
                 /**
                  * @brief Determines if the Node is 'flat'.
                  *
-                 * A Node is considered 'flat' if and only if the size of the FlagMapping returned
+                 * A Node is considered 'flat' if and only if the size of the QVariantMap returned
                  * by flags() is 1.
                  *
                  * @fn isFlat

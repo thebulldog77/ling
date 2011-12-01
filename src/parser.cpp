@@ -32,10 +32,12 @@
 #include <QVector>
 #include <QtDebug>
 #include <QTextStream>
+#include <data/interfaces.hpp>
 #include <boost/tokenizer.hpp>
 #include "syntax.hpp"
 
 using namespace std;
+using namespace Wintermute::Data;
 using namespace Wintermute::Data::Linguistics;
 
 using std::cout;
@@ -221,9 +223,11 @@ namespace Wintermute {
         /// @todo Have this method use D-Bus to obtain that Chain value.
         const Rule* Rule::obtain ( const Node& p_nd ) {
             const QString l_lcl = p_nd.locale ();
-            const QString l_flg = p_nd.flags ().begin ().value ();
+            const QString l_flg = p_nd.flags ().begin ().value ().toString();
+            RuleInterface* l_int = new RuleInterface;
             Rules::Chain l_chn(l_lcl,l_flg);
-            Rules::Cache::read (l_chn);
+            QDBusPendingReply<QString> l_reply = l_int->read(l_chn);
+            //Rules::Cache::read (l_chn);
             return new Rule(l_chn);
         }
 
@@ -320,7 +324,7 @@ namespace Wintermute {
                 const Lexical::Data* l_dt = p_nd->data();
                 cout << "(ling) Enter lexical flags in such a manner; ONTOID LEXIDATA. Press <ENTER> twice to complete the flag entering process." << endl;
                 QString l_oid, l_flg, l_ln = l_iStrm.readLine ();
-                Lexical::FlagMapping l_dtmp;
+                QVariantMap l_dtmp;
 
                 while (!l_ln.isNull() && !l_ln.isEmpty ()) {
                     QStringList l_objs = l_ln.split (" ");

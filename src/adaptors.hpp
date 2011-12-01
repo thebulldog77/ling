@@ -41,8 +41,8 @@ namespace Wintermute {
                 void responseFormed(const QString&);
 
             public slots:
-                virtual void quit(const QDBusMessage&) const;
-                void tellSystem(const QString&, const QDBusMessage&)const;
+                virtual void quit() const;
+                void tellSystem(const QString&)const;
         };
     }
 }

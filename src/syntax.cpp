@@ -41,20 +41,20 @@ namespace Wintermute {
     namespace Linguistics {
 
         const QString Node::toString ( const Node::FormatVerbosity& p_density ) const {
-            Lexical::FlagMapping::ConstIterator l_flgItr = m_lxdt.flags ().begin ();
+            QVariantMap::ConstIterator l_flgItr = m_lxdt.flags ().begin ();
             QString sig;
             switch ( p_density ) {
             case MINIMAL:
-                sig = l_flgItr.value ().at(0);
+                sig = l_flgItr.value ().toString().at(0);
                 break;
 
             case EXTRA:
-                sig = l_flgItr.value ();
+                sig = l_flgItr.value ().toString();
                 break;
 
             default:
             case FULL:
-                sig = l_flgItr.value ();
+                sig = l_flgItr.value ().toString();
                 sig += "[";
                 sig += l_flgItr.key();
                 sig += "]";
@@ -82,9 +82,9 @@ namespace Wintermute {
         Node* Node::create( const Lexical::Data& p_dt ){
             qDebug() << "(ling) [Node] Created node for" << p_dt.id() << ".";
             Data::NodeInterface* l_ndInt = new Data::NodeInterface;
-            QDBusPendingReply<Lexical::Data> l_replyDt = l_ndInt->write(p_dt);
+            QDBusPendingReply<QString> l_replyDt = l_ndInt->write(p_dt);
             l_replyDt.waitForFinished();
-            const Lexical::Data l_dt = l_replyDt.value();
+            const Lexical::Data l_dt = Lexical::Data::fromString(l_replyDt);
             return Node::obtain ( l_dt.locale (), l_dt.id () );
         }
 
@@ -93,19 +93,20 @@ namespace Wintermute {
 
             if ( exists ( p_lcl , p_id ) ) {
                 Data::NodeInterface* l_ndInt = new Data::NodeInterface;
-                l_ndInt->read(l_dt);
-                return new Node ( l_dt );
+                QDBusPendingReply<QString> l_reply = l_ndInt->read(l_dt);
+                l_reply.waitForFinished();
+                return new Node ( Lexical::Data::fromString(l_reply) );
             }
 
             return NULL;
         }
 
         Node* Node::buildPseudo ( const QString& p_lcl, const QString& p_sym ) {
-            qDebug() << "(ling) [Node] Built pseudo-node for" << p_sym;
+            qDebug() << "(ling) [Node] Building pseudo-node for" << p_sym << "...";
             Lexical::Data l_dt("" , p_lcl , p_sym);
-            qDebug() << l_dt;
             Data::NodeInterface* l_ndInt = new Data::NodeInterface;
-            //l_dt = l_ndInt->psuedo(l_dt);
+            QDBusPendingReply<QString> l_reply = l_ndInt->pseudo(l_dt);
+            l_dt = Lexical::Data::fromString((QString) l_reply);
             return new Node ( l_dt );
         }
 
@@ -113,7 +114,13 @@ namespace Wintermute {
             Data::System::registerDataTypes();
             Lexical::Data l_dt(p_id,p_lcl);
             Data::NodeInterface* l_ndInt = new Data::NodeInterface;
-            return l_ndInt->exists(l_dt);
+            QDBusPendingReply<bool> l_reply = l_ndInt->exists(l_dt);
+            l_reply.waitForFinished();
+
+            if (!l_reply.isValid() || l_reply.isError()){
+                qDebug() << l_reply.error();
+                return false;
+            } else return l_reply.value();
         }
 
         Node* Node::form ( const Lexical::Data l_dt ) {
@@ -122,13 +129,13 @@ namespace Wintermute {
 
         NodeList Node::expand ( const Node* p_nd ) {
             NodeList l_vtr;
-            Lexical::FlagMapping l_map;
+            QVariantMap l_map;
             int l_indx = 0;
 
             l_map = p_nd->flags ();
 
-            for ( Lexical::FlagMapping::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
-                Lexical::FlagMapping l_mp;
+            for ( QVariantMap::iterator itr = l_map.begin (); itr != l_map.end (); l_indx++, itr++ ){
+                QVariantMap l_mp;
                 l_mp.insert (itr.key (),itr.value ());
                 Lexical::Data l_dt(p_nd->id (),p_nd->locale (), p_nd->symbol ());
                 l_dt.setFlags (l_mp);

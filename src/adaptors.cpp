@@ -34,15 +34,13 @@ namespace Wintermute {
             setAutoRelaySignals (true);
         }
 
-        void SystemAdaptor::quit (const QDBusMessage& p_msg) const {
+        void SystemAdaptor::quit () const {
             Linguistics::System::stop ();
             CoreAdaptor::haltSystem ();
-            p_msg.createReply (true);
         }
 
-        void SystemAdaptor::tellSystem (const QString &p_txt, const QDBusMessage &p_msg) const {
+        void SystemAdaptor::tellSystem (const QString &p_txt) const {
             Linguistics::System::tellSystem (p_txt);
-            p_msg.createReply (true);
         }
     }
 }
