@@ -8,7 +8,7 @@ Type=API
 Plugin=@WNTRLING_VERSION@
 UUID=@WNTRLING_UUID@
 Compat=@Wintermute_VERSION@
-Library=wintermute-plugin-linguistics
+Library=wplugin-linguistics
 
 [Description]
 Name=Linguistics API

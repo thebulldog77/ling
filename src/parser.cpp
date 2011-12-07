@@ -5,7 +5,7 @@
  * @license GPL3
  *
  * @legalese
- * Copyright (c) SII 2010 - 2011
+ * Copyright (c) SII 2010  2011
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,6 @@
  *
  */
 
-#include "syntax.hpp"
 #include "parser.hpp"
 #include "meanings.hpp"
 #include <plugins/data/wntrdata.hpp>
@@ -36,14 +35,14 @@
 #include <boost/tokenizer.hpp>
 #include "syntax.hpp"
 
-using namespace std;
-using namespace Wintermute::Data;
-using namespace Wintermute::Data::Linguistics;
+-using namespace std;
+-using namespace Wintermute::Data;
+-using namespace Wintermute::Data::Linguistics;
 
-using std::cout;
-using std::endl;
+-using std::cout;
+-using std::endl;
 
-namespace Wintermute {
+-namespace Wintermute {
     namespace Linguistics {
         Token::Token() : m_prfx(), m_sffx(), m_data() { }
         Token::Token(const Token& p_tok) : m_prfx(p_tok.m_prfx), m_sffx(p_tok.m_sffx), m_data(p_tok.m_data) { }
@@ -122,7 +121,7 @@ namespace Wintermute {
             const QStringList l_options = l_wh.split ( "," );
 
             foreach (const QString l_s, l_options) {
-                l_rtn = Rules::Bond::matches(l_ndDestStr , l_s) - (1.0 / (double) l_s.length ());
+                l_rtn = Rules::Bond::matches(l_ndDestStr , l_s)  (1.0 / (double) l_s.length ());
                 const QString l_whHas = l_s.at (0) + l_has;
 
                 if (l_rtn > 0.0) {
@@ -137,7 +136,7 @@ namespace Wintermute {
                             l_rtn += ((double) l_hasAll.length () / (double) l_ndDestStr.length ());
                         }
                     } else if (l_whHas.size () > 1){
-                        const double l_wRtn = Rules::Bond::matches (l_ndDestStr,l_whHas) - ( 1.0 / (double)l_whHas.length ());
+                        const double l_wRtn = Rules::Bond::matches (l_ndDestStr,l_whHas)  ( 1.0 / (double)l_whHas.length ());
                         if (l_wRtn == 0.0){
                             l_rtn = 0.0;
                             qDebug() << "(ling) [Binding] Required partial destination node type:" << l_whHas << "in" << l_ndDestStr;
@@ -150,7 +149,7 @@ namespace Wintermute {
 
                     if (m_bnd.hasAttribute ("typeHas")){
                         const QString l_bindType = l_ndSrcStr.at (0) + this->getAttrValue ( "typeHas" );
-                        const double l_matchVal = Rules::Bond::matches (l_ndSrcStr,l_bindType) - ( 1.0 / (double)l_bindType.length ());
+                        const double l_matchVal = Rules::Bond::matches (l_ndSrcStr,l_bindType)  ( 1.0 / (double)l_bindType.length ());
                         const double l_min = (1.0 / (double)l_bindType.length ());
 
                         //qDebug() << l_min << l_matchVal << l_ndSrcStr << l_bindType;
@@ -226,7 +225,7 @@ namespace Wintermute {
             const QString l_flg = p_nd.flags ().begin ().value ().toString();
             RuleInterface* l_int = new RuleInterface;
             Rules::Chain l_chn(l_lcl,l_flg);
-            QDBusPendingReply<QString> l_reply = l_int->read(l_chn);            
+            QDBusPendingReply<QString> l_reply = l_int->read(l_chn);
             l_reply.waitForFinished();
             qDebug() << l_reply;
             l_chn = Rules::Chain::fromString(l_reply);
@@ -414,7 +413,7 @@ namespace Wintermute {
                 }
            }
 
-            qDebug() << "(ling) [Parser] Tier" << (p_tree.size () - p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
+            qDebug() << "(ling) [Parser] Tier" << (p_tree.size ()  p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
             return l_chldBranches;
         }
 
