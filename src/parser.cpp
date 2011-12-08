@@ -36,13 +36,12 @@
 #include "syntax.hpp"
 
 -using namespace std;
--using namespace Wintermute::Data;
--using namespace Wintermute::Data::Linguistics;
+using namespace Wintermute::Data;
+using namespace Wintermute::Data::Linguistics;
 
--using std::cout;
--using std::endl;
-
--namespace Wintermute {
+using std::cout;
+using std::endl;
+namespace Wintermute {
     namespace Linguistics {
         Token::Token() : m_prfx(), m_sffx(), m_data() { }
         Token::Token(const Token& p_tok) : m_prfx(p_tok.m_prfx), m_sffx(p_tok.m_sffx), m_data(p_tok.m_data) { }
