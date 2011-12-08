@@ -25,7 +25,7 @@
 #include <QMap>
 #include <QList>
 #include <QVariantMap>
-#include <plugins/data/wntrdata.hpp>
+#include <data/wntrdata.hpp>
 
 using namespace Wintermute::Data::Linguistics;
 

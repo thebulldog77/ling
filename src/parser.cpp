@@ -23,7 +23,7 @@
 
 #include "parser.hpp"
 #include "meanings.hpp"
-#include <plugins/data/wntrdata.hpp>
+#include "syntax.hpp"
 #include <iostream>
 #include <iomanip>
 #include <QFile>
@@ -31,11 +31,11 @@
 #include <QVector>
 #include <QtDebug>
 #include <QTextStream>
+#include <data/wntrdata.hpp>
 #include <data/interfaces.hpp>
 #include <boost/tokenizer.hpp>
-#include "syntax.hpp"
 
--using namespace std;
+using namespace std;
 using namespace Wintermute::Data;
 using namespace Wintermute::Data::Linguistics;
 
@@ -120,7 +120,7 @@ namespace Wintermute {
             const QStringList l_options = l_wh.split ( "," );
 
             foreach (const QString l_s, l_options) {
-                l_rtn = Rules::Bond::matches(l_ndDestStr , l_s)  (1.0 / (double) l_s.length ());
+                l_rtn = Rules::Bond::matches(l_ndDestStr , l_s);
                 const QString l_whHas = l_s.at (0) + l_has;
 
                 if (l_rtn > 0.0) {
@@ -135,7 +135,7 @@ namespace Wintermute {
                             l_rtn += ((double) l_hasAll.length () / (double) l_ndDestStr.length ());
                         }
                     } else if (l_whHas.size () > 1){
-                        const double l_wRtn = Rules::Bond::matches (l_ndDestStr,l_whHas)  ( 1.0 / (double)l_whHas.length ());
+                        const double l_wRtn = Rules::Bond::matches (l_ndDestStr,l_whHas);
                         if (l_wRtn == 0.0){
                             l_rtn = 0.0;
                             qDebug() << "(ling) [Binding] Required partial destination node type:" << l_whHas << "in" << l_ndDestStr;
@@ -148,7 +148,7 @@ namespace Wintermute {
 
                     if (m_bnd.hasAttribute ("typeHas")){
                         const QString l_bindType = l_ndSrcStr.at (0) + this->getAttrValue ( "typeHas" );
-                        const double l_matchVal = Rules::Bond::matches (l_ndSrcStr,l_bindType)  ( 1.0 / (double)l_bindType.length ());
+                        const double l_matchVal = Rules::Bond::matches (l_ndSrcStr,l_bindType);
                         const double l_min = (1.0 / (double)l_bindType.length ());
 
                         //qDebug() << l_min << l_matchVal << l_ndSrcStr << l_bindType;
@@ -412,7 +412,7 @@ namespace Wintermute {
                 }
            }
 
-            qDebug() << "(ling) [Parser] Tier" << (p_tree.size ()  p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
+            qDebug() << "(ling) [Parser] Tier" << (p_tree.size () * p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
             return l_chldBranches;
         }
 
