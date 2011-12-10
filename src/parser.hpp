@@ -23,24 +23,18 @@
 #ifndef __PARSER_HPP__
 #define __PARSER_HPP__
 
-#include <string>
-#include <map>
-#include <QString>
-#include <QStringList>
-#include <plugins/data/wntrdata.hpp>
+#include <QList>
+#include <wntrdata.hpp>
 #include "syntax.hpp"
-
-using namespace std;
-
-using std::string;
 
 namespace Wintermute {
     namespace Linguistics {
-        struct Rule;
-        struct Parser;
-        struct Binding;
-        struct Meaning;
-        struct Token;
+        class Rule;
+        class Parser;
+        class Binding;
+        class Meaning;
+        class Token;
+        class Node;
 
         /**
          * @brief Represents a QList of NodeList objects.
@@ -599,9 +593,6 @@ namespace Wintermute {
                 static const QString formShorthand ( const NodeList& , const Node::FormatVerbosity& = Node::FULL );
 
                 void doUnwindingProgressStep();
-
-            private slots:
-                void generateNode(Node*);
 
             signals:
                 /**

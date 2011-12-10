@@ -54,40 +54,47 @@ namespace Wintermute {
             qDebug() << "(ling) [Meaning] Encapsulates" << m_ontoMap.uniqueKeys ();
         }
 
-        const Meaning* Meaning::form ( LinkList* p_lnkVtr, const NodeList& p_ndVtr ) {
+        void Meaning::alignNodes(const NodeList *p_ndLst, const Node *l_nd, const Node *l_nd2){
+            if ( p_ndLst.size () == 2 ) {
+                l_nd = p_ndLst.front ();
+                l_nd2 = p_ndLst.back ();
+            } else {
+                if ( ( l_ndItr + 1 ) != p_ndLst.end () ) {
+                    l_nd =  ( * ( l_ndItr ) );
+                    l_nd2 = ( * ( l_ndItr + 1 ) );
+                } else {
+                    if (l_ndVtr.size () == 1)
+                        l_ndVtr.push_back (*l_ndItr);
+                    break;
+                }
+            }
+        }
+
+        const Meaning* Meaning::form ( LinkList* p_lnkLst, const NodeList& p_ndVtr ) {
             Meaning::s_cnt++;
-            if (p_lnkVtr == NULL)
-                p_lnkVtr = new LinkList;
+            if (p_lnkLst == NULL)
+                p_lnkLst = new LinkList;
 
             cout << endl << setw(6) << setfill('=') << '=';
             cout << " Level ";
-            cout << setw(4) << setfill(' ') << right << s_cnt << ' ';
+            cout << setw(4) << setfill('0') << right << s_cnt << ' ';
             cout << setw(6) << setfill('=') << '=' << endl;
 
             NodeList::ConstIterator l_ndItr = p_ndVtr.begin ();
-            NodeList l_ndVtr;
+            NodeList l_ndLst;
             QStringList* l_hideList = NULL;
             bool l_hideOther = false, l_hideThis = false;
 
-            if (p_ndVtr.size () != 1) {
-                for ( ; l_ndItr != p_ndVtr.end (); l_ndItr++ ) {
-                    const Node *l_nd, *l_nd2;
-                    if ( p_ndVtr.size () == 2 ) {
-                        l_nd = p_ndVtr.front ();
-                        l_nd2 = p_ndVtr.back ();
-                    } else {
-                        if ( ( l_ndItr + 1 ) != p_ndVtr.end () ) {
-                            l_nd =  ( * ( l_ndItr ) );
-                            l_nd2 = ( * ( l_ndItr + 1 ) );
-                        } else {
-                            if (l_ndVtr.size () == 1)
-                                l_ndVtr.push_back (*l_ndItr);
-                            break;
-                        }
-                    }
+            if (p_ndVtr.size () != 1) {                
+                const Node *l_ndLeft;
+                const Node *l_ndRight;
+                const NodeList::ConstIterator l_ndItrEnd = p_ndVtr.end ();
+
+                for ( ; l_ndItr != l_ndItrEnd; l_ndItr++ ) {
+                    alignNodes(&p_ndVtr,l_ndLeft,l_ndRight);
 
                     if (l_hideList) {
-                        const QString l_k = l_nd->toString (Node::EXTRA);
+                        const QString l_k = l_ndLeft->toString (Node::EXTRA);
                         bool l_b = false;
                         foreach (const QString l_s, *l_hideList)
                             if (l_k.contains (l_s)) l_b = true;
@@ -103,14 +110,14 @@ namespace Wintermute {
                         }
                     }
 
-                    qDebug() << "(ling) [Meaning] Current node: " << l_nd;
+                    qDebug() << "(ling) [Meaning] Current node: " << l_ndLeft;
 
-                    const Binding* l_bnd = Binding::obtain ( *l_nd,*l_nd2 );
+                    const Binding* l_bnd = Binding::obtain ( *l_ndLeft,*l_ndRight );
                     const Link* l_lnk;
                     if ( l_bnd ) {
-                        l_lnk = l_bnd->bind ( *l_nd,*l_nd2 );
+                        l_lnk = l_bnd->bind ( *l_ndLeft,*l_ndRight );
                         l_lnk->m_lvl = Meaning::s_cnt;
-                        p_lnkVtr->push_back ( const_cast<Link*>(l_lnk) );
+                        p_lnkLst->push_back ( const_cast<Link*>(l_lnk) );
 
                         QString l_hide = l_bnd->getAttrValue("hide");
                         QString l_hideNext = l_bnd->getAttrValue("hideNext");
@@ -123,7 +130,7 @@ namespace Wintermute {
 
                         // Attribute 'hide': Prevents this node (source node) from appearing on the next round of parsing. (default = 'no')
                         if ( !l_hideThis && !l_hideOther && l_hide == "no" )
-                            l_ndVtr.push_back ( const_cast<Node*>( dynamic_cast<const Node*> ( l_lnk->source () ) ) );
+                            l_ndLst.push_back ( const_cast<Node*>( dynamic_cast<const Node*> ( l_lnk->source () ) ) );
                         else {
                             //qDebug() << "(ling) [Meaning] *** Hid '" << l_lnk->source () << "' from appearing on the next pass of parsing.";
                         }
@@ -174,17 +181,17 @@ namespace Wintermute {
                     //qDebug() << endl << "(ling) [Meaning] Nodes to be queued:" << endl << l_ndVtr << endl;
 
                 }
-                qDebug() << "(ling) [Meaning] Formed" << p_lnkVtr->size () << "links with" << l_ndVtr.size () << "nodes left to parse.";
+                qDebug() << "(ling) [Meaning] Formed" << p_lnkLst->size () << "links with" << l_ndLst.size () << "nodes left to parse.";
             }
 
-            if ( !p_lnkVtr->empty () ) {
-                if ( ! ( p_lnkVtr->size () >= 1) || l_ndVtr.size () > 0 ){
+            if ( !p_lnkLst->empty () ) {
+                if ( ! ( p_lnkLst->size () >= 1) || l_ndLst.size () > 0 ){
                     Q_ASSERT(Meaning::s_cnt < 5);
-                    return Meaning::form ( &*p_lnkVtr, l_ndVtr );
+                    return Meaning::form ( &*p_lnkLst, l_ndLst );
                 }
                 else {
                     Meaning::s_cnt = 0;
-                    return new Meaning ( *p_lnkVtr );
+                    return new Meaning ( *p_lnkLst );
                 }
             } else
                 return NULL;
@@ -262,4 +269,5 @@ namespace Wintermute {
         Meaning::~Meaning () { }
     }
 }
+
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

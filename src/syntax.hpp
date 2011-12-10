@@ -42,11 +42,13 @@ namespace Wintermute {
          * @typedef StringVector
          */
         typedef QList<QString> StringList;
+
         /**
          * @brief Represents a @c QVector of @c Nodes;
          * @typedef NodeVector
          */
         typedef QList<Node*> NodeList;
+
         /**
          * @brief Represents a @c QVector of @c Links;
          * @typedef LinkVector

@@ -108,6 +108,7 @@ namespace Wintermute {
         }
 
         /// @todo This method needs to match each Node to the Bond with more precision.
+        /// @todo See if you can break down this method and allow custom attributes & custom attribute handling.
         const double Binding::canBind ( const Node &p_ndSrc, const Node& p_ndDst ) const {
             if ( this->parentRule ()->appliesFor ( p_ndSrc ) == 0.0 )
                 return 0.0;
@@ -173,6 +174,7 @@ namespace Wintermute {
             return l_rtn;
         }
 
+        /// @todo Allow the attribute to be handle certain parts.
         const Link* Binding::bind ( const Node& p_nd1, const Node& p_nd2 ) const {
             if (!canBind(p_nd1,p_nd2)){
                 emit bindFailed(const_cast<Binding*>(this),&p_nd1,&p_nd2);
@@ -205,9 +207,7 @@ namespace Wintermute {
             return Link::form ( *&l_nd, *&l_nd2 , l_type , l_lcl );
         }
 
-        const Rule* Binding::parentRule () const {
-            return m_rl;
-        }
+        const Rule* Binding::parentRule () const { return m_rl; }
 
         Rule::Rule(const Rule& p_rl) : m_chn(p_rl.m_chn) { __init(); }
 
@@ -218,10 +218,9 @@ namespace Wintermute {
                 m_bndVtr.push_back ((new Binding(l_bnd,this)));
         }
 
-        /// @todo Have this method use D-Bus to obtain that Chain value.
         const Rule* Rule::obtain ( const Node& p_nd ) {
             const QString l_lcl = p_nd.locale ();
-            const QString l_flg = p_nd.flags ().begin ().value ().toString();
+            const QString l_flg = p_nd.flags ().begin ().value ().toString();            
             RuleInterface* l_int = new RuleInterface;
             Rules::Chain l_chn(l_lcl,l_flg);
             QDBusPendingReply<QString> l_reply = l_int->read(l_chn);
@@ -311,7 +310,7 @@ namespace Wintermute {
 
             return l_strLst;
         }
-
+#if 0
         /// @todo Remove this method (but salvage the algorithm for saving a node). [Use it in ncurses-wintermute.]
         void Parser::generateNode(Node* p_nd){
             cout << "(ling) [Parser] Encountered unrecognizable word (" << p_nd->symbol ().toStdString () << "). " << endl
@@ -344,10 +343,9 @@ namespace Wintermute {
                 p_nd = NULL;
             }
         }
-
+#endif
         NodeList Parser::formNodes ( QStringList const &p_tokens ) {
             NodeList l_theNodes;
-            //connect(this,SIGNAL(foundPseduoNode(Node*)), this,SLOT(generateNode(Node*)));
 
             foreach(QString l_token, p_tokens){
                 Node* l_node = formNode(l_token);
@@ -355,7 +353,6 @@ namespace Wintermute {
                     l_theNodes.push_back(l_node);
             }
 
-            //disconnect(this,SLOT(generateNode(Node*)));
             return l_theNodes;
         }
 
@@ -374,9 +371,7 @@ namespace Wintermute {
             return l_theNode;
         }
 
-        void Parser::doUnwindingProgressStep() {
-            m_prg += 1;
-        }
+        void Parser::doUnwindingProgressStep() { m_prg += 1; }
 
         /// @todo Find a means of reporting progress from this method; this method can end up becoming extremely time-consuming.
         NodeTree Parser::expandNodes ( NodeTree& p_tree, const int& p_size, const int& p_level ) {
@@ -386,34 +381,34 @@ namespace Wintermute {
             }
 
             const NodeList l_curBranch = p_tree.at ( p_level );
-            const bool isAtEnd = ( p_level + 1 == p_tree.size () );
+            const bool l_atEnd = ( p_level + 1 == p_tree.size () );
 
             if ( l_curBranch.isEmpty () ) {
                 qDebug() << "(ling) [Parser] WARNING: Null data detected at level" << p_level << ".";
                 return ( NodeTree() );
             }
 
-            const int l_mxSize = p_size / l_curBranch.size ( );
-            NodeTree l_chldBranches, l_foundStems = expandNodes ( p_tree , l_mxSize , p_level + 1 );
+            const int l_maxSize = p_size / l_curBranch.size ( );
+            NodeTree l_childBranches, l_foundStems = expandNodes ( p_tree , l_maxSize , p_level + 1 );
 
-            foreach (Node* l_curLvlNd, l_curBranch){
-                if ( !isAtEnd ) {
+            foreach (Node* l_curNodeForm, l_curBranch){
+                if ( !l_atEnd ) {
                     foreach (NodeList l_curLst, l_foundStems){
                         NodeList l_tmpLst; // creates the current vector [1 of x, x = l_curBranch.size()];
-                        l_tmpLst << l_curLvlNd << l_curLst;
-                        l_chldBranches << l_tmpLst; // add this current branch to list.
+                        l_tmpLst << l_curNodeForm << l_curLst;
+                        l_childBranches << l_tmpLst; // add this current branch to list.
                         doUnwindingProgressStep();
                     }
                 } else { // the end of the line!
                     NodeList l_tmpLst;
-                    l_tmpLst << l_curLvlNd;
-                    l_chldBranches << l_tmpLst; // add this current branch to list.
+                    l_tmpLst << l_curNodeForm;
+                    l_childBranches << l_tmpLst; // add this current branch to list.
                     doUnwindingProgressStep();
                 }
            }
 
-            qDebug() << "(ling) [Parser] Tier" << (p_tree.size () * p_level) << ((l_chldBranches.size () != p_size) ? (QString("generated") + QString::number (l_chldBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
-            return l_chldBranches;
+            qDebug() << "(ling) [Parser] Tier" << (p_tree.size () * p_level) << ((l_childBranches.size () != p_size) ? (QString("generated") + QString::number (l_childBranches.size()) + QString("of its") + QString(p_size)) : (QString("all of its"))).toStdString ().c_str () << "expected branches.";
+            return l_childBranches;
         }
 
         /**
@@ -431,20 +426,21 @@ namespace Wintermute {
          *        =  2 *  3 *  2
          *        = 12
          */
-        NodeTree Parser::expandNodes ( const NodeList &p_ndVtr ) {
+        NodeTree Parser::expandNodes ( const NodeList &p_baseNodeVtr ) {
             int l_totalPaths = 1;
             NodeTree l_metaTree;
 
-            if (!p_ndVtr.isEmpty ()){
-                for ( NodeList::ConstIterator itr = p_ndVtr.begin (); itr != p_ndVtr.end (); itr++ ) {
-                    const Node* l_nd = *itr;
-                    NodeList l_variations = Node::expand ( l_nd );
-                    const unsigned int size = l_variations.size ();
+            if (!p_baseNodeVtr.isEmpty ()){
+                for ( NodeList::ConstIterator l_itr = p_baseNodeVtr.begin (); l_itr != p_baseNodeVtr.end (); l_itr++ ) {
+                    const Node* l_curNode = *l_itr;
+                    NodeList l_curNodeForms = Node::expand ( l_curNode );
+                    const unsigned int size = l_curNodeForms.size ();
                     Q_ASSERT(size >= 1);
-                    if ( itr != p_ndVtr.begin() )
+
+                    if ( l_itr != p_baseNodeVtr.begin() )
                         l_totalPaths *= size;
 
-                    l_metaTree.push_back ( l_variations );
+                    l_metaTree << l_curNodeForms;
                 }
 
                 qDebug() << "(ling) [Parser] Expecting" << l_totalPaths << "path(s).";
@@ -490,6 +486,7 @@ namespace Wintermute {
 
                     Meaning* l_mng = const_cast<Meaning*>( process ( l_sentence ) );
 #if 0
+                    /// @todo Connect this meaning to the last meaning. (Implement context?)
                     if (!l_mngVtr.isEmpty ())
                         l_mng->connectWith(l_mngVtr.last ());
 #endif
