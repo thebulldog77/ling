@@ -1,17 +1,16 @@
+project(WntrLingApi)
 cmake_minimum_required(VERSION 2.8)
-project(WntrLing)
 
 set(WINTERMUTE_IS_PLUGIN ON)
 set(WNTRLING_MAJOR_VERSION 0)
-set(WNTRLING_MINOR_VERSION 0)
-set(WNTRLING_MICRO_VERSION 1)
+set(WNTRLING_MINOR_VERSION 1)
 set(WNTRLING_UUID "81da3bd6-bed5-4c74-aae6-44f48cd5330c")
 set(WNTRLING_VERSION
-    ${WNTRLING_MAJOR_VERSION}.${WNTRLING_MINOR_VERSION}${WNTRLING_MICRO_VERSION})
+    ${WNTRLING_MAJOR_VERSION}.${WNTRLING_MINOR_VERSION})
 
 ## Packages
-find_package(Wintermute 0.01 REQUIRED)
-find_package(WntrData 0.01 REQUIRED)
+find_package(Wintermute 0.1 REQUIRED)
+find_package(WntrData 0.1 REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
 find_package(Boost 1.46 REQUIRED)
 find_package(Qt4 4.4.3 REQUIRED)

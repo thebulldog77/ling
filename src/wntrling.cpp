@@ -76,5 +76,5 @@ namespace Wintermute {
     }
 }
 
-Q_EXPORT_PLUGIN2(Wintermute-Plugin-Linguistics, Wintermute::Linguistics::Plugin)
+Q_EXPORT_PLUGIN2(WPLUGIN-LINGUISTICS, Wintermute::Linguistics::Plugin)
 // kate: indent-mode cstyle; space-indent on; indent-width 4;

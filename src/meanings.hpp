@@ -167,7 +167,7 @@ namespace Wintermute {
 
         private:
             void __init();
-            void alignNodes(const NodeList*, const Node*, const Node*);
+            static void alignNodes(const NodeList*, const Node*, const Node*, NodeList*, NodeList::ConstIterator*);
             static int s_cnt;
         };
     }

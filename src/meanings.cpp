@@ -54,18 +54,19 @@ namespace Wintermute {
             qDebug() << "(ling) [Meaning] Encapsulates" << m_ontoMap.uniqueKeys ();
         }
 
-        void Meaning::alignNodes(const NodeList *p_ndLst, const Node *l_nd, const Node *l_nd2){
-            if ( p_ndLst.size () == 2 ) {
-                l_nd = p_ndLst.front ();
-                l_nd2 = p_ndLst.back ();
+        /// @todo Should a pointer to the end iterator be passed? It'd reduce the need to constantly call the method but increases the size of the signature of the mention.
+        void Meaning::alignNodes(const NodeList *p_lstAll, const Node *p_ndLeft, const Node *p_ndRight, NodeList* p_lstParsed, NodeList::ConstIterator* p_ndItr){
+            const NodeList::ConstIterator l_ndItrEnd = p_lstAll->end ();
+            if ( p_lstAll->size () == 2 ) {
+                p_ndLeft = p_lstAll->front ();
+                p_ndRight = p_lstAll->back ();
             } else {
-                if ( ( l_ndItr + 1 ) != p_ndLst.end () ) {
-                    l_nd =  ( * ( l_ndItr ) );
-                    l_nd2 = ( * ( l_ndItr + 1 ) );
+                if ( ( *p_ndItr + 1 ) != l_ndItrEnd ) {
+                    p_ndLeft =  *( * ( p_ndItr ) );
+                    p_ndRight = *( * ( p_ndItr + 1 ) );
                 } else {
-                    if (l_ndVtr.size () == 1)
-                        l_ndVtr.push_back (*l_ndItr);
-                    break;
+                    if (p_lstParsed->size () == 1)
+                        p_lstParsed->push_back(**p_ndItr);
                 }
             }
         }
@@ -91,7 +92,7 @@ namespace Wintermute {
                 const NodeList::ConstIterator l_ndItrEnd = p_ndVtr.end ();
 
                 for ( ; l_ndItr != l_ndItrEnd; l_ndItr++ ) {
-                    alignNodes(&p_ndVtr,l_ndLeft,l_ndRight);
+                    alignNodes(&p_ndVtr,l_ndLeft,l_ndRight,&l_ndLst,&l_ndItr);
 
                     if (l_hideList) {
                         const QString l_k = l_ndLeft->toString (Node::EXTRA);
